@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["bom1"],
+  "functions": {
+    "app/api/resume/analyze/route.ts": { "maxDuration": 120 },
+    "app/api/resume/optimize/route.ts": { "maxDuration": 120 },
+    "app/api/roadmap/generate/route.ts": { "maxDuration": 120 },
+    "app/api/assessment/generate/route.ts": { "maxDuration": 120 },
+    "app/api/assessment/submit/route.ts": { "maxDuration": 120 },
+    "app/api/interview/respond/route.ts": { "maxDuration": 120 },
+    "app/api/career/match/route.ts": { "maxDuration": 120 }
+  }
+}
