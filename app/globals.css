@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 30% 10%;
+    --primary: 243 75% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 225 30% 96%;
+    --secondary-foreground: 224 30% 16%;
+    --muted: 225 25% 96%;
+    --muted-foreground: 224 12% 45%;
+    --accent: 243 70% 96%;
+    --accent-foreground: 243 70% 34%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 62% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 92% 46%;
+    --warning-foreground: 0 0% 100%;
+    --border: 225 20% 90%;
+    --input: 225 20% 88%;
+    --ring: 243 75% 58%;
+    --chart-1: 243 75% 58%;
+    --chart-2: 173 62% 40%;
+    --chart-3: 32 92% 52%;
+    --chart-4: 291 64% 55%;
+    --chart-5: 199 89% 48%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 226 32% 7%;
+    --foreground: 220 20% 96%;
+    --card: 226 28% 10%;
+    --card-foreground: 220 20% 96%;
+    --popover: 226 28% 10%;
+    --popover-foreground: 220 20% 96%;
+    --primary: 243 85% 70%;
+    --primary-foreground: 226 40% 8%;
+    --secondary: 226 22% 16%;
+    --secondary-foreground: 220 20% 94%;
+    --muted: 226 22% 15%;
+    --muted-foreground: 222 12% 64%;
+    --accent: 243 40% 20%;
+    --accent-foreground: 243 90% 88%;
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 46%;
+    --success-foreground: 226 40% 8%;
+    --warning: 32 90% 58%;
+    --warning-foreground: 226 40% 8%;
+    --border: 226 20% 19%;
+    --input: 226 20% 22%;
+    --ring: 243 85% 70%;
+    --chart-1: 243 85% 70%;
+    --chart-2: 173 62% 52%;
+    --chart-3: 32 92% 62%;
+    --chart-4: 291 70% 70%;
+    --chart-5: 199 89% 62%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-br from-foreground via-foreground to-primary bg-clip-text text-transparent;
+  }
+
+  .grid-backdrop {
+    background-image: linear-gradient(
+        to right,
+        hsl(var(--border) / 0.5) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+
+  .glow-surface {
+    background: radial-gradient(
+      70% 60% at 50% 0%,
+      hsl(var(--primary) / 0.14) 0%,
+      transparent 70%
+    );
+  }
+
+  .card-elevated {
+    box-shadow:
+      0 1px 2px hsl(224 30% 10% / 0.04),
+      0 8px 24px -12px hsl(224 30% 10% / 0.12);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+}
