@@ -91,7 +91,7 @@ export function estimateSkillProficiency(
   skill: ResolvableSkill,
   normalizedText: string,
   yearsExperience: number,
-  inSkillsSection: boolean,
+  demonstratedInExperience: boolean,
 ) {
   const terms = [skill.name, ...skill.aliases].map(normalizeSkillKey).filter(Boolean);
   const mentions = terms.reduce(
@@ -99,12 +99,13 @@ export function estimateSkillProficiency(
     0,
   );
 
-  const base = 34;
-  const mentionBoost = Math.min(26, mentions * 7);
-  const experienceBoost = Math.min(18, Math.round(yearsExperience * 3.5));
-  const sectionBoost = inSkillsSection ? 6 : 0;
+  const base = demonstratedInExperience ? 40 : 20;
+  const mentionBoost = Math.min(18, Math.max(0, mentions - 1) * 5);
+  const experienceBoost = demonstratedInExperience
+    ? Math.min(22, Math.round(yearsExperience * 3.2))
+    : Math.min(8, Math.round(yearsExperience * 1.2));
 
-  return clamp(base + mentionBoost + experienceBoost + sectionBoost, 20, 88);
+  return clamp(base + mentionBoost + experienceBoost, 10, 92);
 }
 
 export function estimateSkillConfidence(mentionsInExperience: boolean, mentionCount: number) {
@@ -192,40 +193,64 @@ function parseProjectEntries(lines: string[], resolver: SkillResolver) {
   return entries.slice(0, 8);
 }
 
+export function lengthAdequacy(wordCount: number) {
+  if (wordCount < 60) return 0.35;
+  if (wordCount < 120) return 0.6;
+  if (wordCount < 200) return 0.8;
+  if (wordCount < 300) return 0.93;
+  if (wordCount > 1400) return 0.92;
+  return 1;
+}
+
 export function scoreResumeQuality(text: string, sections: ResumeSections, skillCount: number) {
   const bulletCount = (text.match(/^[-*•]/gm) ?? []).length;
-  const quantifiedCount = (text.match(/\b\d+(\.\d+)?\s*(%|percent|k\b|m\b|x\b|users|requests|ms\b)/gi) ?? [])
-    .length;
+  const quantifiedCount = (
+    text.match(/\b\d+(\.\d+)?\s*(%|percent|k\b|m\b|x\b|users|requests|ms\b|s\b|hours|lines|teams)/gi) ?? []
+  ).length;
   const hasContact = /@|linkedin|github/i.test(text);
   const wordCount = text.split(/\s+/).filter(Boolean).length;
 
-  const sectionScore =
-    (sections.experience?.length ? 22 : 0) +
-    (sections.education?.length ? 14 : 0) +
-    (sections.skills?.length ? 14 : 0) +
-    (sections.projects?.length ? 12 : 0) +
-    (sections.summary?.length ? 8 : 0) +
-    (sections.certifications?.length ? 5 : 0);
+  const substantiveBullets = text
+    .split("\n")
+    .filter((line) => /^[-*•]/.test(line.trim()) && line.trim().length > 40).length;
 
-  const evidenceScore =
-    Math.min(14, Math.round(bulletCount * 1.2)) +
-    Math.min(12, quantifiedCount * 4) +
-    (hasContact ? 5 : 0) +
-    Math.min(8, Math.round(skillCount / 2));
+  const structureScore =
+    (sections.experience?.length ? 9 : 0) +
+    (sections.skills?.length ? 5 : 0) +
+    (sections.education?.length ? 4 : 0) +
+    (sections.projects?.length ? 4 : 0) +
+    (sections.summary?.length ? 3 : 0) +
+    (sections.certifications?.length ? 1 : 0);
 
-  const lengthPenalty = wordCount < 180 ? 12 : wordCount > 1400 ? 6 : 0;
+  const substanceScore =
+    Math.min(20, substantiveBullets * 2.6) +
+    Math.min(26, quantifiedCount * 5.5) +
+    Math.min(16, skillCount * 1.3) +
+    (hasContact ? 5 : 0);
 
-  const overallScore = clamp(sectionScore + evidenceScore - lengthPenalty, 10, 96);
+  const overallScore = clamp(
+    Math.round((structureScore + substanceScore) * lengthAdequacy(wordCount)),
+    0,
+    98,
+  );
+
+  const keywordDensity = Math.min(20, skillCount * 1.6);
+  const parseability =
+    (sections.experience?.length ? 8 : 0) +
+    (sections.skills?.length ? 7 : 0) +
+    (sections.education?.length ? 4 : 0) +
+    (hasContact ? 6 : 0);
 
   const atsScore = clamp(
-    (sections.skills?.length ? 26 : 8) +
-      (sections.experience?.length ? 24 : 6) +
-      (sections.education?.length ? 14 : 4) +
-      Math.min(18, skillCount * 1.4) +
-      (hasContact ? 8 : 0) +
-      (bulletCount >= 6 ? 8 : 2),
-    10,
-    96,
+    Math.round(
+      (keywordDensity +
+        parseability +
+        Math.min(18, substantiveBullets * 2.2) +
+        Math.min(16, quantifiedCount * 4)) *
+        lengthAdequacy(wordCount),
+    ),
+    0,
+    98,
   );
 
   const strengths: string[] = [];
@@ -274,12 +299,8 @@ export function buildHeuristicAnalysis(
   const sections = splitResumeSections(text);
   const normalizedText = normalizeSkillKey(text);
   const yearsExperience = guessYearsExperience(text);
-  const skillsSectionText = (sections.skills ?? []).join(" ");
   const experienceText = (sections.experience ?? []).concat(sections.projects ?? []).join(" ");
   const normalizedExperience = normalizeSkillKey(experienceText);
-  const skillsSectionSlugs = new Set(
-    resolver.detectMentions(skillsSectionText).map((skill) => skill.slug),
-  );
 
   const detected = resolver.detectMentions(text);
   const skills = detected.slice(0, 30).map((skill) => {
@@ -293,12 +314,7 @@ export function buildHeuristicAnalysis(
     return {
       name: skill.name,
       category: categoryOf(skill.slug),
-      proficiency: estimateSkillProficiency(
-        skill,
-        normalizedText,
-        yearsExperience,
-        skillsSectionSlugs.has(skill.slug),
-      ),
+      proficiency: estimateSkillProficiency(skill, normalizedText, yearsExperience, inExperience),
       evidence: inExperience
         ? "Mentioned in the experience or project sections of the resume."
         : "Listed in the resume without supporting experience detail.",
