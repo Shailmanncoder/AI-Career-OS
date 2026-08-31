@@ -75,7 +75,8 @@ export default async function ProgressPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Roadmap completion"
-          value={`${data.stats.roadmapPercentage}%`}
+          value={data.stats.roadmapPercentage}
+          suffix="%"
           hint={`${data.roadmapProgress.completed} of ${data.roadmapProgress.total} tasks`}
           icon={Route}
           tone="success"
@@ -95,7 +96,8 @@ export default async function ProgressPage() {
         />
         <StatCard
           label="Learning streak"
-          value={`${data.stats.streak}d`}
+          value={data.stats.streak}
+          suffix="d"
           hint="Consecutive active days"
           icon={Flame}
           tone="warning"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -35,6 +36,7 @@ export function MarketingNav({ isAuthenticated }: { isAuthenticated: boolean }) 
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {isAuthenticated ? (
             <Button asChild size="sm">
               <Link href="/dashboard">Open dashboard</Link>

@@ -86,6 +86,10 @@ export default async function DashboardPage() {
 
   const focusRole =
     data.matches.find((match) => match.careerRoleId === data.focusRoleId) ?? data.topMatch;
+  const focusScore = focusRole?.score ?? 0;
+  const focusIsTarget = Boolean(
+    data.profile?.targetCareerId && focusRole?.careerRoleId === data.profile.targetCareerId,
+  );
 
   const firstName = (data.analysis?.fullName ?? user.name ?? "there").split(" ")[0];
 
@@ -119,7 +123,8 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Top compatibility"
-          value={data.stats.topScore > 0 ? `${data.stats.topScore}%` : "—"}
+          value={data.stats.topScore > 0 ? data.stats.topScore : "—"}
+          suffix="%"
           hint={data.topMatch?.careerRole.title ?? "Run career matching"}
           icon={Target}
           tone="primary"
@@ -138,7 +143,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Roadmap progress"
-          value={`${data.stats.roadmapPercentage}%`}
+          value={data.stats.roadmapPercentage}
+          suffix="%"
           hint={
             data.roadmapProgress.total > 0
               ? `${data.roadmapProgress.completed} of ${data.roadmapProgress.total} tasks`
@@ -155,7 +161,8 @@ export default async function DashboardPage() {
             <div>
               <CardTitle>Career compatibility</CardTitle>
               <CardDescription>
-                Deterministic weighted matching across {data.matches.length} scored roles.
+                Deterministic weighted matching across all {data.totalRoleCount} roles. Showing your
+                top {data.matches.length}.
               </CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
@@ -180,12 +187,19 @@ export default async function DashboardPage() {
           <CardContent className="space-y-5">
             <div className="flex flex-col items-center gap-3 rounded-lg bg-muted/50 p-5 text-center">
               <ScoreRing
-                value={data.stats.topScore}
+                value={focusScore}
                 size={104}
-                label="Best fit"
-                tone={data.stats.topScore >= 75 ? "success" : data.stats.topScore >= 50 ? "primary" : "warning"}
+                label={focusIsTarget ? "Target" : "Best fit"}
+                tone={focusScore >= 75 ? "success" : focusScore >= 50 ? "primary" : "warning"}
               />
-              <p className="text-sm font-medium">{focusRole?.careerRole.title ?? "No match yet"}</p>
+              <div className="space-y-0.5 text-center">
+                <p className="text-sm font-medium">{focusRole?.careerRole.title ?? "No match yet"}</p>
+                {focusIsTarget && data.topMatch && data.topMatch.careerRoleId !== focusRole?.careerRoleId ? (
+                  <p className="text-xs text-muted-foreground">
+                    Best fit is {data.topMatch.careerRole.title} at {data.topMatch.score}%
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-2">

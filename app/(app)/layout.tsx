@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppSidebar, MobileNav } from "@/components/dashboard/app-sidebar";
 import { UserMenu } from "@/components/dashboard/user-menu";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { requireSessionUser } from "@/lib/auth/session";
 import { isAiConfigured } from "@/lib/env";
 
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
                 <Link href="/resume">Upload resume</Link>
               </Button>
+              <ThemeToggle />
               <UserMenu name={user.name} email={user.email} />
             </div>
           </div>

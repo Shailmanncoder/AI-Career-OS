@@ -128,7 +128,7 @@ export function Problem() {
 
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {PROBLEMS.map((problem) => (
-            <Card key={problem.title} className="p-6">
+            <Card key={problem.title} className="card-interactive p-6">
               <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
                 <problem.icon className="h-4.5 w-4.5" />
               </span>
@@ -181,7 +181,7 @@ export function HowItWorks() {
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step) => (
-            <Card key={step.number} className="relative overflow-hidden p-6">
+            <Card key={step.number} className="card-interactive surface-sheen relative overflow-hidden p-6">
               <span className="absolute right-4 top-3 text-4xl font-semibold tabular-nums text-muted/70">
                 {step.number}
               </span>
@@ -243,7 +243,7 @@ export function Features() {
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature) => (
-            <Card key={feature.title} className="group p-6 transition-shadow hover:shadow-md">
+            <Card key={feature.title} className="card-interactive surface-sheen group p-6">
               <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
                 <feature.icon className="h-4.5 w-4.5" />
               </span>

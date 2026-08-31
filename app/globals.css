@@ -77,10 +77,34 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.021em;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   ::selection {
     @apply bg-primary/20;
+  }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -118,8 +142,58 @@
 
   .card-elevated {
     box-shadow:
-      0 1px 2px hsl(224 30% 10% / 0.04),
-      0 8px 24px -12px hsl(224 30% 10% / 0.12);
+      0 0 0 1px hsl(var(--border) / 0.6),
+      0 1px 2px hsl(224 40% 8% / 0.04),
+      0 4px 12px -4px hsl(224 40% 8% / 0.06),
+      0 12px 32px -12px hsl(224 40% 8% / 0.10);
+    transition:
+      box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dark .card-elevated {
+    box-shadow:
+      0 0 0 1px hsl(var(--border)),
+      0 1px 2px hsl(226 40% 3% / 0.5),
+      0 8px 24px -8px hsl(226 40% 3% / 0.6);
+  }
+
+  .card-interactive:hover {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.28),
+      0 2px 4px hsl(224 40% 8% / 0.05),
+      0 12px 28px -8px hsl(var(--primary) / 0.16);
+    transform: translateY(-2px);
+  }
+
+  .dark .card-interactive:hover {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.4),
+      0 12px 28px -8px hsl(226 40% 3% / 0.7);
+  }
+
+  .surface-sheen {
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--card)),
+      hsl(var(--card)) 60%,
+      hsl(var(--muted) / 0.35)
+    );
+  }
+
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .display-figure {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+  }
+
+  .hairline {
+    border-color: hsl(var(--border) / 0.7);
   }
 
   .scrollbar-thin {

@@ -66,6 +66,8 @@ export async function loadDashboardData(userId: string) {
     prisma.learningProgress.count({ where: { userId, completed: true } }),
   ]);
 
+  const totalRoleCount = await prisma.careerRole.count();
+
   const topMatch = matches[0] ?? null;
   const focusRoleId = profile?.targetCareerId ?? topMatch?.careerRoleId ?? null;
 
@@ -103,6 +105,7 @@ export async function loadDashboardData(userId: string) {
     interviews,
     simulations,
     activities,
+    totalRoleCount,
     stats: {
       skillCount: candidateSkills.length,
       verifiedSkillCount: candidateSkills.filter((skill) => skill.verified).length,
