@@ -1,4 +1,5 @@
 import type { ResolvedTheme } from "./constants";
+import { getInkRunner } from "./ink-runner";
 
 export type TransitionOrigin = { x: number; y: number } | null;
 
@@ -48,39 +49,18 @@ export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigi
     return;
   }
 
-  const doc = document as DocumentWithTransition;
-
-  if (prefersReducedMotion() || typeof doc.startViewTransition !== "function") {
-    root.classList.add("theme-fade");
+  if (prefersReducedMotion()) {
     paintTheme(theme);
-    window.setTimeout(() => root.classList.remove("theme-fade"), 420);
     return;
   }
 
-  const x = origin?.x ?? window.innerWidth - 56;
-  const y = origin?.y ?? 40;
-  const radius = Math.hypot(
-    Math.max(x, window.innerWidth - x),
-    Math.max(y, window.innerHeight - y),
-  );
+  const ink = getInkRunner();
+  if (ink) {
+    ink(theme, origin);
+    return;
+  }
 
-  root.style.setProperty("--theme-origin-x", `${x}px`);
-  root.style.setProperty("--theme-origin-y", `${y}px`);
-  root.style.setProperty("--theme-radius", `${radius}px`);
-  root.dataset.themeTransition = "active";
-  restartInkAnimations();
-
-  const transition = doc.startViewTransition(() => paintTheme(theme));
-
-  transition.ready.catch(() => undefined);
-  transition.updateCallbackDone.catch(() => undefined);
-
-  transition.finished
-    .catch(() => undefined)
-    .finally(() => {
-      delete root.dataset.themeTransition;
-      root.style.removeProperty("--theme-origin-x");
-      root.style.removeProperty("--theme-origin-y");
-      root.style.removeProperty("--theme-radius");
-    });
+  root.classList.add("theme-fade");
+  paintTheme(theme);
+  window.setTimeout(() => root.classList.remove("theme-fade"), 420);
 }

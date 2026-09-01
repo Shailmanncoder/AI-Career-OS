@@ -3,7 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeScript } from "@/components/shared/theme-script";
-import { InkFilter } from "@/components/shared/ink-filter";
+import { InkThemeTransition } from "@/components/shared/ink-theme-transition";
 import "./globals.css";
 
 const inter = Inter({
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>
-        <InkFilter />
+        <InkThemeTransition />
         <TooltipProvider delayDuration={200}>
           <a
             href="#main"
