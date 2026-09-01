@@ -1,13 +1,15 @@
+import { BLOB_COUNT } from "@/lib/theme/ink";
+
 export function InkFilter() {
   return (
     <svg aria-hidden="true" focusable="false" className="pointer-events-none absolute h-0 w-0">
       <defs>
         <filter
           id="inkDistortion"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
+          x="-60%"
+          y="-60%"
+          width="220%"
+          height="220%"
           colorInterpolationFilters="sRGB"
         >
           <feTurbulence type="fractalNoise" baseFrequency="0.0035" numOctaves="3" seed="7" result="large" />
@@ -18,25 +20,16 @@ export function InkFilter() {
           <feComposite in="coarse" in2="fine" operator="arithmetic" k1="0" k2="1" k3="0.14" k4="0" result="combined" />
 
           <feDisplacementMap
+            id="inkDisplace"
             in="SourceGraphic"
             in2="combined"
-            scale="300"
+            scale="0"
             xChannelSelector="R"
             yChannelSelector="G"
             result="rough"
-          >
-            <animate
-              className="ink-anim"
-              attributeName="scale"
-              begin="indefinite"
-              dur="950ms"
-              values="90; 250; 320; 300"
-              keyTimes="0; 0.35; 0.75; 1"
-              fill="freeze"
-            />
-          </feDisplacementMap>
+          />
 
-          <feGaussianBlur in="rough" stdDeviation="2.2" result="bleed" />
+          <feGaussianBlur in="rough" stdDeviation="1.8" result="bleed" />
           <feColorMatrix
             in="bleed"
             type="matrix"
@@ -46,6 +39,15 @@ export function InkFilter() {
                     0 0 0 24 -9"
           />
         </filter>
+
+        <mask id="inkMask" maskUnits="userSpaceOnUse" x="0" y="0" width="4000" height="4000">
+          <g filter="url(#inkDistortion)" fill="#ffffff">
+            <circle id="inkMain" cx="0" cy="0" r="0" />
+            {Array.from({ length: BLOB_COUNT }, (_, index) => (
+              <circle key={index} className="ink-blob" cx="0" cy="0" r="0" />
+            ))}
+          </g>
+        </mask>
       </defs>
     </svg>
   );
