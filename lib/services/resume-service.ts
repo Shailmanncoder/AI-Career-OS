@@ -6,6 +6,7 @@ import { buildHeuristicAnalysis } from "./heuristic-analysis";
 import { SkillResolver, type ResolvableSkill } from "./skill-resolver";
 import { recomputeCareerIntelligence } from "./career-service";
 import { clamp } from "@/lib/utils";
+import { hashResumeContent } from "./content-hash";
 
 export type ResumeProcessingOutcome = {
   resumeId: string;
@@ -14,6 +15,7 @@ export type ResumeProcessingOutcome = {
   skillCount: number;
   overallScore: number;
   atsScore: number;
+  reusedFromIdenticalResume?: boolean;
 };
 
 async function loadResolver() {
@@ -95,6 +97,53 @@ export async function persistExtractedSkills(
   return resolved.size;
 }
 
+
+async function reuseAnalysis(
+  userId: string,
+  resumeId: string,
+  prior: NonNullable<Awaited<ReturnType<typeof prisma.resumeAnalysis.findFirst>>>,
+): Promise<ResumeProcessingOutcome> {
+  const payload = {
+    summary: prior.summary,
+    fullName: prior.fullName,
+    headline: prior.headline,
+    yearsExperience: prior.yearsExperience,
+    overallScore: prior.overallScore,
+    atsScore: prior.atsScore,
+    education: prior.education as object,
+    experience: prior.experience as object,
+    projects: prior.projects as object,
+    certifications: prior.certifications as object,
+    achievements: prior.achievements as object,
+    careerSignals: prior.careerSignals as object,
+    strengths: prior.strengths as object,
+    weaknesses: prior.weaknesses as object,
+    recommendations: prior.recommendations as object,
+    modelUsed: prior.modelUsed,
+    isFallback: prior.isFallback,
+  };
+
+  await prisma.resumeAnalysis.upsert({
+    where: { resumeId },
+    create: { resumeId, ...payload },
+    update: payload,
+  });
+
+  await prisma.resume.update({ where: { id: resumeId }, data: { status: "READY" } });
+  await recomputeCareerIntelligence(userId);
+
+  const skillCount = await prisma.candidateSkill.count({ where: { userId } });
+
+  return {
+    resumeId,
+    usedFallback: prior.isFallback,
+    skillCount,
+    overallScore: prior.overallScore,
+    atsScore: prior.atsScore,
+    reusedFromIdenticalResume: true,
+  };
+}
+
 export async function processResumeAnalysis(
   userId: string,
   resumeId: string,
@@ -103,6 +152,18 @@ export async function processResumeAnalysis(
   if (!resume) throw new Error("RESUME_NOT_FOUND");
 
   await prisma.resume.update({ where: { id: resumeId }, data: { status: "ANALYZING" } });
+
+  const contentHash = resume.contentHash || hashResumeContent(resume.extractedText);
+  if (!resume.contentHash) {
+    await prisma.resume.update({ where: { id: resumeId }, data: { contentHash } });
+  }
+
+  const priorAnalysis = await prisma.resumeAnalysis.findFirst({
+    where: {
+      resume: { userId, contentHash, id: { not: resumeId } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   const [{ resolver, categoryOf }, profile] = await Promise.all([
     loadResolver(),
@@ -116,6 +177,11 @@ export async function processResumeAnalysis(
     where: { userId, source: "ONBOARDING" },
     include: { skill: true },
   });
+
+  if (priorAnalysis) {
+    const reused = await reuseAnalysis(userId, resumeId, priorAnalysis);
+    return reused;
+  }
 
   const aiResult = await analyzeResume({
     resumeText: resume.extractedText,

@@ -1,5 +1,5 @@
 import type { ResolvedTheme } from "./constants";
-import { getInkRunner } from "./ink-runner";
+import { coverageRadius, INK_DURATION_MS } from "./ink";
 
 export type TransitionOrigin = { x: number; y: number } | null;
 
@@ -12,17 +12,6 @@ type ViewTransition = {
 type DocumentWithTransition = Document & {
   startViewTransition?: (callback: () => void) => ViewTransition;
 };
-
-function restartInkAnimations() {
-  const nodes = document.querySelectorAll<SVGAnimateElement>("svg .ink-anim");
-  nodes.forEach((node) => {
-    try {
-      node.beginElement();
-    } catch {
-      return;
-    }
-  });
-}
 
 export function paintTheme(theme: ResolvedTheme) {
   const root = document.documentElement;
@@ -39,6 +28,23 @@ function prefersReducedMotion() {
   );
 }
 
+function restartInkAnimations() {
+  document.querySelectorAll<SVGAnimateElement>("svg .ink-anim").forEach((node) => {
+    try {
+      node.beginElement();
+    } catch {
+      return;
+    }
+  });
+}
+
+function fadeSwap(theme: ResolvedTheme) {
+  const root = document.documentElement;
+  root.classList.add("theme-fade");
+  paintTheme(theme);
+  window.setTimeout(() => root.classList.remove("theme-fade"), 620);
+}
+
 export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigin = null) {
   if (typeof document === "undefined") return;
 
@@ -49,18 +55,40 @@ export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigi
     return;
   }
 
-  if (prefersReducedMotion()) {
-    paintTheme(theme);
+  const doc = document as DocumentWithTransition;
+
+  if (prefersReducedMotion() || typeof doc.startViewTransition !== "function") {
+    fadeSwap(theme);
     return;
   }
 
-  const ink = getInkRunner();
-  if (ink) {
-    ink(theme, origin);
-    return;
-  }
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const x = origin?.x ?? width / 2;
+  const y = 0;
+  const radius = coverageRadius({ x, y }, width, height);
 
-  root.classList.add("theme-fade");
-  paintTheme(theme);
-  window.setTimeout(() => root.classList.remove("theme-fade"), 420);
+  root.style.setProperty("--ink-x", `${x}px`);
+  root.style.setProperty("--ink-y", `${y}px`);
+  root.style.setProperty("--ink-r", `${radius}px`);
+  root.dataset.themeTransition = "active";
+  restartInkAnimations();
+
+  const transition = doc.startViewTransition(() => paintTheme(theme));
+
+  transition.ready.catch(() => undefined);
+  transition.updateCallbackDone.catch(() => undefined);
+
+  transition.finished
+    .catch(() => undefined)
+    .finally(() => {
+      delete root.dataset.themeTransition;
+      root.style.removeProperty("--ink-x");
+      root.style.removeProperty("--ink-y");
+      root.style.removeProperty("--ink-r");
+    });
+
+  window.setTimeout(() => {
+    delete root.dataset.themeTransition;
+  }, INK_DURATION_MS + 400);
 }

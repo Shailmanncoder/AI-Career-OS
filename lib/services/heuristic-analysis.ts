@@ -234,23 +234,23 @@ export function scoreResumeQuality(text: string, sections: ResumeSections, skill
     98,
   );
 
-  const keywordDensity = Math.min(20, skillCount * 1.6);
+  const keywordDensity = Math.min(28, skillCount * 2.2);
   const parseability =
     (sections.experience?.length ? 8 : 0) +
-    (sections.skills?.length ? 7 : 0) +
+    (sections.skills?.length ? 6 : 0) +
     (sections.education?.length ? 4 : 0) +
-    (hasContact ? 6 : 0);
+    (hasContact ? 5 : 0);
 
   const atsScore = clamp(
     Math.round(
       (keywordDensity +
         parseability +
-        Math.min(18, substantiveBullets * 2.2) +
-        Math.min(16, quantifiedCount * 4)) *
+        Math.min(26, substantiveBullets * 2.2) +
+        Math.min(23, quantifiedCount * 4.6)) *
         lengthAdequacy(wordCount),
     ),
     0,
-    98,
+    100,
   );
 
   const strengths: string[] = [];

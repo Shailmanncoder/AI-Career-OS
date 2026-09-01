@@ -3,7 +3,6 @@ import {
   BLOB_COUNT,
   DROPLET_COUNT,
   INK_DURATION_MS,
-  INK_THEME_SWAP_AT,
   blobCenter,
   blobRadiusAt,
   clampOrigin,
@@ -140,10 +139,9 @@ describe("expansion geometry", () => {
     expect(mainRadiusAt(1, plan.radius)).toBeCloseTo(plan.radius, 3);
   });
 
-  it("swaps the theme past the midpoint of the spread", () => {
-    expect(INK_THEME_SWAP_AT).toBeGreaterThan(0.5);
-    expect(INK_THEME_SWAP_AT).toBeLessThan(0.7);
-    expect(mainRadiusAt(INK_THEME_SWAP_AT, plan.radius)).toBeGreaterThan(plan.radius * 0.5);
+  it("paints from the top edge so the spread reads as downward", () => {
+    const fromTop = coverageRadius({ x: W / 2, y: 0 }, W, H);
+    expect(fromTop).toBeGreaterThan(Math.hypot(W / 2, H));
   });
 
   it("holds delayed blobs at zero until their delay elapses", () => {

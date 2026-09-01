@@ -6,6 +6,7 @@ import {
   extractResumeText,
   validateResumeFile,
 } from "@/lib/services/resume-extract";
+import { hashResumeContent } from "@/lib/services/content-hash";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
         mimeType: file.type || "application/pdf",
         fileSize: file.size,
         extractedText: extraction.text,
+        contentHash: hashResumeContent(extraction.text),
         charCount: extraction.charCount,
         status: "PARSING",
         isActive: true,

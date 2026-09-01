@@ -211,6 +211,7 @@ model Resume {
   mimeType     String
   fileSize     Int
   extractedText String      @db.Text
+  contentHash  String       @default("")
   charCount    Int          @default(0)
   status       ResumeStatus @default(UPLOADED)
   failureCode  String?
@@ -223,6 +224,7 @@ model Resume {
 
   @@index([userId, createdAt])
   @@index([userId, isActive])
+  @@index([userId, contentHash])
 }
 
 model ResumeAnalysis {
