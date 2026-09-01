@@ -235,11 +235,11 @@
 html[data-theme-transition="active"]::view-transition-new(root) {
   -webkit-mask: url(#inkMask);
   mask: url(#inkMask);
-  animation: ink-hold 950ms linear forwards;
+  animation: ink-hold 1450ms linear forwards;
 }
 
 html[data-theme-transition="active"]::view-transition-old(root) {
-  animation: ink-hold 950ms linear forwards;
+  animation: ink-hold 1450ms linear forwards;
 }
 
 @keyframes ink-hold {

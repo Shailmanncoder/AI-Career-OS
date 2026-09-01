@@ -22,7 +22,7 @@ export type InkPlan = {
   droplets: InkDroplet[];
 };
 
-export const INK_DURATION_MS = 950;
+export const INK_DURATION_MS = 1450;
 export const INK_THEME_SWAP_AT = 0.34;
 export const INK_REVEAL_MS = 190;
 

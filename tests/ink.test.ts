@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   BLOB_COUNT,
@@ -177,5 +178,34 @@ describe("expansion geometry", () => {
         expect(s.opacity).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+});
+
+describe("animation duration stays in sync across TypeScript and CSS", () => {
+  const css = readFileSync("app/globals.css", "utf8");
+
+  it("declares the hold animation for the view transition pseudo-elements", () => {
+    expect(css).toContain("ink-hold");
+    expect(css).toMatch(/::view-transition-new\(root\)/);
+  });
+
+  it("uses the same duration as INK_DURATION_MS", () => {
+    const durations = [...css.matchAll(/animation: ink-hold (\d+)ms/g)].map((m) => Number(m[1]));
+    expect(durations.length).toBeGreaterThan(0);
+    for (const duration of durations) {
+      expect(duration).toBe(INK_DURATION_MS);
+    }
+  });
+
+  it("keeps the transition alive long enough to finish the spread", () => {
+    const durations = [...css.matchAll(/animation: ink-hold (\d+)ms/g)].map((m) => Number(m[1]));
+    for (const duration of durations) {
+      expect(duration).toBeGreaterThanOrEqual(INK_DURATION_MS);
+    }
+  });
+
+  it("masks the incoming snapshot rather than filtering it", () => {
+    expect(css).toMatch(/mask: url\(#inkMask\)/);
+    expect(css).not.toMatch(/::view-transition-new\(root\)[^}]*filter: url\(#inkDistortion\)/s);
   });
 });
