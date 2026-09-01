@@ -13,7 +13,6 @@ export type CareerRoleSeed = {
   category: string;
   shortDescription: string;
   description: string;
-  demandIndex: number;
   responsibilities: string[];
   learningAreas: string[];
   skills: CareerRoleSkillSeed[];
@@ -48,7 +47,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Builds the interfaces users touch, with a focus on speed and accessibility.",
     description:
       "Frontend Developers translate product and design intent into responsive, accessible interfaces. The role blends strong JavaScript fundamentals with component architecture, state management, performance budgets, and close collaboration with design and backend teams.",
-    demandIndex: 84,
     responsibilities: [
       "Implement responsive interfaces from design specifications",
       "Own component architecture and shared UI primitives",
@@ -82,7 +80,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Designs the services, data models, and APIs that power products.",
     description:
       "Backend Developers own server side logic, data persistence, and the contracts other systems depend on. The role emphasises API design, database modelling, reliability, and secure handling of application data.",
-    demandIndex: 86,
     responsibilities: [
       "Design and implement service APIs",
       "Model relational and non relational data",
@@ -116,7 +113,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Ships complete features end to end, from database to interface.",
     description:
       "Full Stack Developers move fluidly between interface work and service work. They are valued for delivering a whole feature: schema, API, UI, tests, and deployment, while keeping the seams between layers clean.",
-    demandIndex: 90,
     responsibilities: [
       "Deliver features across database, API, and interface layers",
       "Own schema migrations and API contracts",
@@ -151,7 +147,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Generalist engineer focused on durable, well tested systems.",
     description:
       "Software Engineers build and maintain software systems with an emphasis on fundamentals: data structures, design, testing, and code review. The role is language flexible and rewards depth in computer science basics.",
-    demandIndex: 88,
     responsibilities: [
       "Design and implement maintainable software components",
       "Participate in design and code review",
@@ -184,7 +179,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Turns raw data into decisions leaders can act on.",
     description:
       "Data Analysts answer business questions with data. They query sources, clean and reconcile datasets, build dashboards, and present findings in language that non technical stakeholders can act on.",
-    demandIndex: 82,
     responsibilities: [
       "Write queries against production and warehouse data",
       "Clean, reconcile, and validate datasets",
@@ -216,7 +210,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Builds statistical and predictive models that change product decisions.",
     description:
       "Data Scientists combine statistics, experimentation, and machine learning to answer questions that simple reporting cannot. The role expects rigour in methodology and clarity in communicating uncertainty.",
-    demandIndex: 85,
     responsibilities: [
       "Frame business problems as statistical questions",
       "Design and evaluate experiments",
@@ -248,7 +241,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Ships production applications built on foundation models.",
     description:
       "AI Engineers build reliable product features on top of large language and multimodal models. The role combines application engineering with prompt design, evaluation, retrieval, guardrails, and cost aware architecture.",
-    demandIndex: 93,
     responsibilities: [
       "Design retrieval and prompting strategies for product features",
       "Validate and constrain model output before it reaches users",
@@ -281,7 +273,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Takes models from notebook to reliable production service.",
     description:
       "Machine Learning Engineers own the path from trained model to production system. They handle data pipelines, training infrastructure, deployment, monitoring, and the software engineering discipline that research code usually lacks.",
-    demandIndex: 89,
     responsibilities: [
       "Build reproducible training and evaluation pipelines",
       "Deploy models as monitored services",
@@ -314,7 +305,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Detects, investigates, and responds to security threats.",
     description:
       "Cybersecurity Analysts monitor systems for threats, investigate alerts, and drive remediation. The role blends network and application security knowledge with disciplined incident handling and clear written reporting.",
-    demandIndex: 87,
     responsibilities: [
       "Monitor and triage security alerts",
       "Investigate incidents and document findings",
@@ -346,7 +336,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Designs and operates secure, scalable cloud infrastructure.",
     description:
       "Cloud Engineers architect and run the infrastructure applications depend on. The role covers networking, identity, cost control, infrastructure as code, and the operational discipline required to keep services available.",
-    demandIndex: 86,
     responsibilities: [
       "Design cloud architecture for scale and cost",
       "Provision infrastructure through code",
@@ -379,7 +368,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Automates the path from commit to production.",
     description:
       "DevOps Engineers shorten and harden the delivery pipeline. They own build automation, environment parity, release safety, and the feedback loops that tell teams whether a deploy went well.",
-    demandIndex: 85,
     responsibilities: [
       "Build and maintain CI/CD pipelines",
       "Containerise and orchestrate services",
@@ -411,7 +399,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Decides what gets built and makes the case for why.",
     description:
       "Product Managers connect user need, business goal, and engineering reality. The role is judgement heavy: framing problems, sequencing work, saying no, and keeping a team aligned on outcomes rather than output.",
-    demandIndex: 80,
     responsibilities: [
       "Define product problems and success metrics",
       "Prioritise and sequence the roadmap",
@@ -442,7 +429,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Designs product experiences grounded in real user behaviour.",
     description:
       "UI/UX Designers research user needs and translate them into flows, wireframes, and polished interfaces. The role balances aesthetic craft with usability evidence and close partnership with engineering.",
-    demandIndex: 78,
     responsibilities: [
       "Run user research and usability testing",
       "Design flows, wireframes, and high fidelity screens",
@@ -472,7 +458,6 @@ export const CAREER_ROLE_SEEDS: CareerRoleSeed[] = [
     shortDescription: "Translates business problems into requirements teams can build.",
     description:
       "Business Analysts sit between business stakeholders and delivery teams. They map processes, elicit requirements, quantify impact, and keep scope honest as projects move from idea to release.",
-    demandIndex: 76,
     responsibilities: [
       "Elicit and document business requirements",
       "Map and improve existing processes",

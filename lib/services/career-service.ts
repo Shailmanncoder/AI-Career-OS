@@ -16,7 +16,6 @@ export type RoleWithSkills = {
   shortDescription: string;
   description: string;
   category: string;
-  demandIndex: number;
   learningAreas: string[];
   responsibilities: string[];
   roleSkills: RoleSkillInput[];
@@ -35,7 +34,6 @@ export async function loadCareerRoles(): Promise<RoleWithSkills[]> {
     shortDescription: role.shortDescription,
     description: role.description,
     category: role.category,
-    demandIndex: role.demandIndex,
     learningAreas: role.learningAreas,
     responsibilities: role.responsibilities,
     roleSkills: role.roleSkills.map((roleSkill) => ({

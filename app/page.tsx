@@ -1,4 +1,5 @@
 import { getSessionUser } from "@/lib/auth/session";
+import { loadLandingPreview } from "@/lib/services/landing-service";
 import { MarketingNav } from "@/components/marketing/nav";
 import {
   Features,
@@ -21,7 +22,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  const user = await getSessionUser();
+  const [user, preview] = await Promise.all([getSessionUser(), loadLandingPreview()]);
   const isAuthenticated = Boolean(user);
 
   return (
@@ -45,7 +46,7 @@ export default async function LandingPage() {
             "AI estimated levels are labelled as estimates, never as verified measurements",
             "Assessment results replace estimates with recorded evidence",
           ]}
-          preview={<SkillIntelligencePreview />}
+          preview={<SkillIntelligencePreview data={preview} />}
         />
 
         <FeatureSplit
@@ -58,7 +59,7 @@ export default async function LandingPage() {
             "Identical inputs always produce an identical score",
             "AI writes the explanation; the application owns the number",
           ]}
-          preview={<CareerMatchPreview />}
+          preview={<CareerMatchPreview data={preview} />}
           reverse
           className="border-t bg-muted/25"
         />
@@ -74,7 +75,7 @@ export default async function LandingPage() {
             "Every simulation is saved so you can compare paths later",
             "AI explains why those specific skills move the number",
           ]}
-          preview={<CareerSimulatorPreview />}
+          preview={<CareerSimulatorPreview data={preview} />}
         />
 
         <FeatureSplit
@@ -88,7 +89,7 @@ export default async function LandingPage() {
             "Real learning resources from official documentation and open courses",
             "Task completion persists and feeds your progress tracking",
           ]}
-          preview={<RoadmapPreview />}
+          preview={<RoadmapPreview data={preview} />}
           reverse
           className="border-t bg-muted/25"
         />
@@ -103,7 +104,7 @@ export default async function LandingPage() {
             "Formatting warnings for layouts that parse badly",
             "No fabricated employers, degrees, certifications, or metrics",
           ]}
-          preview={<ResumeOptimizerPreview />}
+          preview={<ResumeOptimizerPreview data={preview} />}
         />
 
         <FeatureSplit
@@ -116,7 +117,7 @@ export default async function LandingPage() {
             "Follow-up questions adapt to your answer and your recorded skill gaps",
             "Full sessions are stored so you can review progress over time",
           ]}
-          preview={<InterviewCoachPreview />}
+          preview={<InterviewCoachPreview data={preview} />}
           reverse
           className="border-t bg-muted/25"
         />

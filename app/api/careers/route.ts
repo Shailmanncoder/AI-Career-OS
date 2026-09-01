@@ -27,7 +27,6 @@ export async function GET() {
         title: role.title,
         category: role.category,
         shortDescription: role.shortDescription,
-        demandIndex: role.demandIndex,
         score: scoreByRole.get(role.id) ?? null,
         skillCount: role.roleSkills.length,
       })),

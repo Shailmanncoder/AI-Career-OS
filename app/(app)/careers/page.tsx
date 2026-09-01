@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, Layers, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,8 +124,8 @@ export default async function CareersPage() {
                             </Badge>
                           ) : null}
                           <Badge variant="secondary" className="gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            demand {role.demandIndex}
+                            <Layers className="h-3 w-3" />
+                            {role._count.roleSkills} weighted skills
                           </Badge>
                         </div>
 

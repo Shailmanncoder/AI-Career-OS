@@ -302,7 +302,6 @@ model CareerRole {
   category         String
   responsibilities String[] @default([])
   learningAreas    String[] @default([])
-  demandIndex      Int      @default(70)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

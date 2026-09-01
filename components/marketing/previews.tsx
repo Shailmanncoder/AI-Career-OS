@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScoreRing } from "@/components/shared/score-ring";
+import type { LandingPreviewData } from "@/lib/services/landing-service";
 import { cn } from "@/lib/utils";
 
 function PreviewFrame({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -20,27 +21,42 @@ function PreviewFrame({ children, className }: { children: React.ReactNode; clas
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
         <span className="h-2.5 w-2.5 rounded-full bg-border" />
+        <span className="ml-auto text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Live demo data
+        </span>
       </div>
       <div className="p-5 sm:p-6">{children}</div>
     </Card>
   );
 }
 
-const SKILL_ROWS = [
-  { name: "React", category: "Frameworks", level: 80, confidence: "High confidence" },
-  { name: "TypeScript", category: "Programming", level: 68, confidence: "High confidence" },
-  { name: "Web Performance", category: "Tools", level: 66, confidence: "Evidenced by metrics" },
-  { name: "Node.js", category: "Frameworks", level: 34, confidence: "Low evidence" },
-  { name: "PostgreSQL", category: "Databases", level: 30, confidence: "Project only" },
-];
+function Unavailable({ label }: { label: string }) {
+  return (
+    <PreviewFrame>
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        {label} becomes available once the demo account is seeded.
+      </p>
+    </PreviewFrame>
+  );
+}
 
-export function SkillIntelligencePreview() {
+function confidenceLabel(confidence: number) {
+  if (confidence >= 0.8) return "High confidence";
+  if (confidence >= 0.55) return "Moderate confidence";
+  return "Low evidence";
+}
+
+export function SkillIntelligencePreview({ data }: { data: LandingPreviewData | null }) {
+  if (!data || data.skills.length === 0) return <Unavailable label="Skill intelligence" />;
+
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">Skill Intelligence</p>
-          <p className="text-xs text-muted-foreground">19 skills extracted with evidence</p>
+          <p className="text-xs text-muted-foreground">
+            {data.skillCount} skills extracted with evidence
+          </p>
         </div>
         <Badge variant="muted" className="gap-1 font-normal">
           <Sparkles className="h-3 w-3" />
@@ -49,16 +65,18 @@ export function SkillIntelligencePreview() {
       </div>
 
       <ul className="space-y-3.5">
-        {SKILL_ROWS.map((skill) => (
+        {data.skills.map((skill) => (
           <li key={skill.name} className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-3">
               <span className="truncate text-sm font-medium">{skill.name}</span>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{skill.level}</span>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {skill.level}
+              </span>
             </div>
             <Progress value={skill.level} className="h-1.5" />
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
               <span>{skill.category}</span>
-              <span>{skill.confidence}</span>
+              <span>{confidenceLabel(skill.confidence)}</span>
             </div>
           </li>
         ))}
@@ -67,35 +85,35 @@ export function SkillIntelligencePreview() {
   );
 }
 
-export function CareerSimulatorPreview() {
+export function CareerSimulatorPreview({ data }: { data: LandingPreviewData | null }) {
+  const simulation = data?.simulation;
+  if (!simulation) return <Unavailable label="The career simulator" />;
+
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">Career Simulator</p>
-          <p className="text-xs text-muted-foreground">Full Stack Developer</p>
+          <p className="text-xs text-muted-foreground">{simulation.roleTitle}</p>
         </div>
-        <Badge variant="success" className="gap-1">
+        <Badge variant={simulation.delta > 0 ? "success" : "muted"} className="gap-1 tabular-nums">
           <ArrowUpRight className="h-3 w-3" />
-          +13%
+          {simulation.delta > 0 ? "+" : ""}
+          {simulation.delta}%
         </Badge>
       </div>
 
       <div className="flex items-center justify-center gap-5 sm:gap-8">
-        <div className="text-center">
-          <ScoreRing value={78} size={92} strokeWidth={7} label="Now" tone="warning" />
-        </div>
+        <ScoreRing value={simulation.baselineScore} size={92} strokeWidth={7} label="Now" tone="warning" />
         <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
           <span className="text-xs font-medium uppercase tracking-wider">adds</span>
           <ArrowUpRight className="h-4 w-4" />
         </div>
-        <div className="text-center">
-          <ScoreRing value={91} size={92} strokeWidth={7} label="After" tone="success" />
-        </div>
+        <ScoreRing value={simulation.projectedScore} size={92} strokeWidth={7} label="After" tone="success" />
       </div>
 
       <div className="mt-5 flex flex-wrap justify-center gap-2">
-        {["Node.js", "PostgreSQL", "REST APIs"].map((skill) => (
+        {simulation.addedSkills.map((skill) => (
           <Badge key={skill} variant="default" className="gap-1">
             <CircleDot className="h-3 w-3" />
             {skill}
@@ -103,36 +121,36 @@ export function CareerSimulatorPreview() {
         ))}
       </div>
 
-      <p className="mt-5 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
-        Server side ownership is the largest weighted deduction on this role. These three skills convert
-        three separate required-skill gaps into met requirements at once.
-      </p>
+      {simulation.explanation ? (
+        <p className="mt-5 rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
+          {simulation.explanation}
+        </p>
+      ) : null}
     </PreviewFrame>
   );
 }
 
-const PHASES = [
-  { title: "Foundations", weeks: "Weeks 1–2", tasks: 4, done: 4 },
-  { title: "Core Skill Build", weeks: "Weeks 3–5", tasks: 4, done: 2 },
-  { title: "Applied Practice", weeks: "Weeks 6–8", tasks: 4, done: 0 },
-  { title: "Integration Project", weeks: "Weeks 9–11", tasks: 3, done: 0 },
-  { title: "Portfolio & Interview Prep", weeks: "Week 12", tasks: 3, done: 0 },
-];
+export function RoadmapPreview({ data }: { data: LandingPreviewData | null }) {
+  const roadmap = data?.roadmap;
+  if (!roadmap) return <Unavailable label="The roadmap" />;
 
-export function RoadmapPreview() {
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold">90-Day Roadmap</p>
-          <p className="text-xs text-muted-foreground">8 hours per week · 18 tasks</p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{roadmap.title}</p>
+          <p className="text-xs text-muted-foreground">
+            {roadmap.weeklyHours} hours per week · {roadmap.taskCount} tasks
+          </p>
         </div>
-        <Badge variant="muted">33% complete</Badge>
+        <Badge variant="muted" className="shrink-0 tabular-nums">
+          {roadmap.percentage}% complete
+        </Badge>
       </div>
 
       <ol className="relative space-y-4 border-l border-border pl-5">
-        {PHASES.map((phase) => {
-          const complete = phase.done === phase.tasks;
+        {roadmap.phases.map((phase) => {
+          const complete = phase.total > 0 && phase.done === phase.total;
           const active = phase.done > 0 && !complete;
           return (
             <li key={phase.title} className="relative">
@@ -143,14 +161,16 @@ export function RoadmapPreview() {
                 )}
               />
               <div className="flex items-baseline justify-between gap-3">
-                <p className={cn("text-sm font-medium", !complete && !active && "text-muted-foreground")}>
+                <p className={cn("truncate text-sm font-medium", !complete && !active && "text-muted-foreground")}>
                   {phase.title}
                 </p>
                 <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                  {phase.done}/{phase.tasks}
+                  {phase.done}/{phase.total}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">{phase.weeks}</p>
+              <p className="text-[11px] text-muted-foreground">
+                Weeks {phase.weekStart}–{phase.weekEnd}
+              </p>
             </li>
           );
         })}
@@ -159,37 +179,42 @@ export function RoadmapPreview() {
   );
 }
 
-export function ResumeOptimizerPreview() {
+export function ResumeOptimizerPreview({ data }: { data: LandingPreviewData | null }) {
+  const resume = data?.resume;
+  if (!resume) return <Unavailable label="The resume optimizer" />;
+
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold">Resume Optimizer</p>
-          <p className="text-xs text-muted-foreground">Target: Full Stack Developer</p>
+          <p className="truncate text-xs text-muted-foreground">Target: {resume.roleTitle}</p>
         </div>
-        <Badge variant="warning">ATS readiness 71</Badge>
+        <Badge variant={resume.atsScore >= 70 ? "success" : "warning"} className="shrink-0 tabular-nums">
+          ATS readiness {resume.atsScore}
+        </Badge>
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-lg border border-destructive/25 bg-destructive/5 p-3">
-          <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-destructive">
-            <FileText className="h-3 w-3" />
-            Original
-          </p>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Worked on the shipment tracking dashboard and improved its performance.
-          </p>
-        </div>
+        {resume.bullet ? (
+          <div className="rounded-lg border border-success/25 bg-success/5 p-3">
+            <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-success">
+              <BadgeCheck className="h-3 w-3" />
+              A bullet that already works
+            </p>
+            <p className="text-xs leading-relaxed">{resume.bullet}</p>
+          </div>
+        ) : null}
 
-        <div className="rounded-lg border border-success/25 bg-success/5 p-3">
-          <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-success">
-            <BadgeCheck className="h-3 w-3" />
-            Improved
+        <div className="rounded-lg border p-3">
+          <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <FileText className="h-3 w-3" />
+            Resume score
           </p>
-          <p className="text-xs leading-relaxed">
-            Rebuilt the shipment tracking dashboard in React and TypeScript, cutting first contentful
-            paint from 3.4s to 1.2s.
-          </p>
+          <div className="flex items-center gap-3">
+            <Progress value={resume.overallScore} className="h-1.5" />
+            <span className="shrink-0 text-xs font-medium tabular-nums">{resume.overallScore}</span>
+          </div>
         </div>
 
         <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -201,73 +226,67 @@ export function ResumeOptimizerPreview() {
   );
 }
 
-const INTERVIEW_SCORES = [
-  { label: "Relevance", value: 88 },
-  { label: "Technical accuracy", value: 79 },
-  { label: "Structure", value: 84 },
-  { label: "Communication", value: 81 },
-  { label: "Completeness", value: 78 },
-];
+export function InterviewCoachPreview({ data }: { data: LandingPreviewData | null }) {
+  const interview = data?.interview;
+  if (!interview) return <Unavailable label="The interview coach" />;
 
-export function InterviewCoachPreview() {
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold">Interview Coach</p>
-          <p className="text-xs text-muted-foreground">Mixed · Mid level</p>
+          <p className="truncate text-xs capitalize text-muted-foreground">
+            {interview.kind.toLowerCase()} · {interview.experience} level
+          </p>
         </div>
-        <Badge variant="success">Answer score 82</Badge>
+        <Badge
+          variant={interview.score >= 70 ? "success" : "warning"}
+          className="shrink-0 tabular-nums"
+        >
+          Answer score {interview.score}
+        </Badge>
       </div>
 
       <div className="mb-4 flex gap-3 rounded-lg bg-muted/60 p-3">
         <MessageSquareQuote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <p className="text-xs leading-relaxed">
-          Tell me about a project you are proud of, and walk me through one technical decision you made
-          in it.
-        </p>
+        <p className="text-xs leading-relaxed">{interview.question}</p>
       </div>
 
-      <ul className="space-y-2.5">
-        {INTERVIEW_SCORES.map((score) => (
-          <li key={score.label} className="flex items-center gap-3">
-            <span className="w-32 shrink-0 text-[11px] text-muted-foreground">{score.label}</span>
-            <Progress value={score.value} className="h-1.5" />
-            <span className="w-7 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-              {score.value}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed">
-        <span className="font-medium">Next: </span>
-        State what you measured with, so the numbers are traceable.
-      </p>
+      {interview.improvements.length > 0 ? (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+            Do this next time
+          </p>
+          <ul className="space-y-1">
+            {interview.improvements.map((item) => (
+              <li key={item} className="text-xs leading-relaxed">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </PreviewFrame>
   );
 }
 
-const MATCHES = [
-  { role: "Full Stack Developer", score: 87 },
-  { role: "Frontend Developer", score: 84 },
-  { role: "Backend Developer", score: 76 },
-  { role: "Data Analyst", score: 62 },
-];
+export function CareerMatchPreview({ data }: { data: LandingPreviewData | null }) {
+  if (!data || data.matches.length === 0) return <Unavailable label="Career matching" />;
 
-export function CareerMatchPreview() {
   return (
     <PreviewFrame>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">Top Career Matches</p>
-          <p className="text-xs text-muted-foreground">Weighted skill matching · 14 roles scored</p>
+          <p className="text-xs text-muted-foreground">
+            Weighted skill matching · {data.roleCount} roles scored
+          </p>
         </div>
-        <Target className="h-4 w-4 text-muted-foreground" />
+        <Target className="h-4 w-4 shrink-0 text-muted-foreground" />
       </div>
 
       <ul className="space-y-3.5">
-        {MATCHES.map((match, index) => (
+        {data.matches.map((match, index) => (
           <li key={match.role} className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-3">
               <span className={cn("truncate text-sm", index === 0 ? "font-semibold" : "font-medium")}>

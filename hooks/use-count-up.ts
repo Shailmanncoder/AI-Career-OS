@@ -5,36 +5,67 @@ import { useEffect, useRef, useState } from "react";
 const EASE_OUT_EXPO = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
 export function useCountUp(target: number, durationMs = 900) {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(target);
   const frameRef = useRef<number | null>(null);
-  const startedRef = useRef<number | null>(null);
-  const fromRef = useRef(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const valueRef = useRef(target);
 
   useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    const cancel = () => {
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+      frameRef.current = null;
+      timeoutRef.current = null;
+    };
+
+    const settle = () => {
+      cancel();
+      setValue(target);
+    };
+
     const prefersReduced =
       typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (prefersReduced || durationMs <= 0) {
+    if (prefersReduced || durationMs <= 0 || typeof window === "undefined") {
       setValue(target);
       return;
     }
 
-    fromRef.current = value;
-    startedRef.current = null;
+    if (document.visibilityState === "hidden") {
+      setValue(target);
+      return;
+    }
+
+    const from = valueRef.current;
+    if (from === target) return;
+
+    setValue(from);
+    let started: number | null = null;
 
     const step = (timestamp: number) => {
-      if (startedRef.current === null) startedRef.current = timestamp;
-      const elapsed = timestamp - startedRef.current;
-      const progress = Math.min(1, elapsed / durationMs);
-      const eased = EASE_OUT_EXPO(progress);
-      setValue(Math.round(fromRef.current + (target - fromRef.current) * eased));
-      if (progress < 1) frameRef.current = requestAnimationFrame(step);
+      if (started === null) started = timestamp;
+      const progress = Math.min(1, (timestamp - started) / durationMs);
+      setValue(Math.round(from + (target - from) * EASE_OUT_EXPO(progress)));
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(step);
+      } else {
+        cancel();
+      }
     };
 
     frameRef.current = requestAnimationFrame(step);
+    timeoutRef.current = setTimeout(settle, durationMs + 400);
+    document.addEventListener("visibilitychange", settle);
+
     return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      cancel();
+      document.removeEventListener("visibilitychange", settle);
     };
   }, [target, durationMs]);
 
