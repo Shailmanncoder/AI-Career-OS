@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     title: "AI CareerOS",
     description: "Turn your resume into your career roadmap.",
     type: "website",
+    siteName: "AI CareerOS",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI CareerOS",
+    description: "Turn your resume into your career roadmap.",
   },
   robots: { index: true, follow: true },
 };
