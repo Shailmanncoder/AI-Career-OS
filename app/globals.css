@@ -201,3 +201,63 @@
     scrollbar-color: hsl(var(--border)) transparent;
   }
 }
+
+@layer utilities {
+  .theme-fade,
+  .theme-fade *,
+  .theme-fade *::before,
+  .theme-fade *::after {
+    transition:
+      background-color 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      fill 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      stroke 380ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 380ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+html[data-theme-transition="active"]::view-transition-new(root) {
+  animation: ink-flood 1200ms cubic-bezier(0.16, 0.62, 0.24, 1) forwards;
+  filter: url(#ink-spread);
+  will-change: clip-path;
+}
+
+@keyframes ink-flood {
+  0% {
+    clip-path: circle(0% at var(--theme-origin-x, 50%) var(--theme-origin-y, 50%));
+  }
+  12% {
+    clip-path: circle(calc(var(--theme-radius, 150vmax) * 0.06) at var(--theme-origin-x, 50%) var(--theme-origin-y, 50%));
+  }
+  40% {
+    clip-path: circle(calc(var(--theme-radius, 150vmax) * 0.38) at var(--theme-origin-x, 50%) var(--theme-origin-y, 50%));
+  }
+  72% {
+    clip-path: circle(calc(var(--theme-radius, 150vmax) * 0.78) at var(--theme-origin-x, 50%) var(--theme-origin-y, 50%));
+  }
+  100% {
+    clip-path: circle(calc(var(--theme-radius, 150vmax) * 1.08) at var(--theme-origin-x, 50%) var(--theme-origin-y, 50%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-transition="active"]::view-transition-new(root) {
+    animation: none;
+    filter: none;
+  }
+}

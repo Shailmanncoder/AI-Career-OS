@@ -22,15 +22,29 @@ export function Logo({
         className,
       )}
     >
-      <Image
-        src="/logo-mark.png"
-        alt=""
-        width={size}
-        height={size}
-        priority
-        className="shrink-0 transition-transform duration-300 group-hover:scale-105"
+      <span
+        className="relative shrink-0 transition-transform duration-300 group-hover:scale-105"
         style={{ width: size, height: size }}
-      />
+      >
+        <Image
+          src="/logo-mark.png"
+          alt=""
+          width={size}
+          height={size}
+          priority
+          className="block dark:hidden"
+          style={{ width: size, height: size }}
+        />
+        <Image
+          src="/logo-mark-dark.png"
+          alt=""
+          width={size}
+          height={size}
+          priority
+          className="hidden dark:block"
+          style={{ width: size, height: size }}
+        />
+      </span>
       {showWordmark ? (
         <span className="text-[15px] font-semibold tracking-tight">AI CareerOS</span>
       ) : null}
@@ -39,14 +53,26 @@ export function Logo({
 }
 
 export function LogoLockup({ className, width = 260 }: { className?: string; width?: number }) {
+  const height = Math.round((width * 422) / 529);
   return (
-    <Image
-      src="/logo-full.png"
-      alt="AI CareerOS — Analyze, Grow, Get Hired"
-      width={width}
-      height={Math.round((width * 422) / 529)}
-      priority
-      className={cn("h-auto", className)}
-    />
+    <span className={cn("inline-block", className)}>
+      <Image
+        src="/logo-full.png"
+        alt="AI CareerOS — Analyze, Grow, Get Hired"
+        width={width}
+        height={height}
+        priority
+        className="block h-auto dark:hidden"
+      />
+      <Image
+        src="/logo-full-dark.png"
+        alt=""
+        aria-hidden="true"
+        width={width}
+        height={height}
+        priority
+        className="hidden h-auto dark:block"
+      />
+    </span>
   );
 }
