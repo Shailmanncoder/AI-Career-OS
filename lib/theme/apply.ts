@@ -1,4 +1,5 @@
 import type { ResolvedTheme } from "./constants";
+import { createTransitionQueue } from "./transition-queue";
 import {
   blobCenter,
   blobRadiusAt,
@@ -77,8 +78,20 @@ function resetMask() {
   });
 }
 
+const queue = createTransitionQueue<{ theme: ResolvedTheme; origin: TransitionOrigin }>();
+
+function releaseTransition() {
+  const queued = queue.release();
+  if (queued) applyThemeAnimated(queued.theme, queued.origin);
+}
+
 export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigin = null) {
   if (typeof document === "undefined") return;
+
+  if (queue.isRunning()) {
+    queue.begin({ theme, origin });
+    return;
+  }
 
   const root = document.documentElement;
   const current = root.classList.contains("dark") ? "dark" : "light";
@@ -105,6 +118,7 @@ export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigi
 
   paintMaskFrame(plan, 0);
   root.dataset.themeTransition = "active";
+  queue.begin({ theme, origin });
 
   const transition = doc.startViewTransition(() => paintTheme(theme));
   transition.ready.catch(() => undefined);
@@ -131,17 +145,16 @@ export function applyThemeAnimated(theme: ResolvedTheme, origin: TransitionOrigi
       paintMaskFrame(plan, 1);
     });
 
-  transition.finished
-    .catch(() => undefined)
-    .finally(() => {
-      cancelAnimationFrame(frame);
-      delete root.dataset.themeTransition;
-      resetMask();
-    });
-
-  window.setTimeout(() => {
+  let settled = false;
+  const settle = () => {
+    if (settled) return;
+    settled = true;
     cancelAnimationFrame(frame);
     delete root.dataset.themeTransition;
     resetMask();
-  }, INK_DURATION_MS + 600);
+    releaseTransition();
+  };
+
+  transition.finished.catch(() => undefined).finally(settle);
+  window.setTimeout(settle, INK_DURATION_MS + 600);
 }

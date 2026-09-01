@@ -125,8 +125,13 @@ export function useThemeMode() {
       if (cached) {
         setDaylight(cached);
         paint(themeFromReading(cached), origin);
+        void resolveDaylight(true).then((reading) => {
+          setDaylight(reading);
+          if (modeRef.current === "daylight") paint(themeFromReading(reading));
+        });
+        return;
       }
-      await syncDaylight(true, cached ? null : origin);
+      await syncDaylight(true, origin);
     },
     [paint, syncDaylight],
   );
