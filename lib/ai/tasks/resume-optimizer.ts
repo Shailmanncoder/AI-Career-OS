@@ -7,6 +7,7 @@ export type ResumeOptimizerContext = {
   roleTitle: string;
   roleDescription: string;
   roleSkills: string[];
+  roleSkillAliases?: Record<string, string[]>;
   missingSkills: string[];
   resumeText: string;
 };

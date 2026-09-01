@@ -40,6 +40,9 @@ export async function POST(request: Request) {
       roleTitle: role.title,
       roleDescription: role.shortDescription,
       roleSkills: role.roleSkills.map((roleSkill) => roleSkill.skill.name),
+      roleSkillAliases: Object.fromEntries(
+        role.roleSkills.map((roleSkill) => [roleSkill.skill.name, roleSkill.skill.aliases]),
+      ),
       missingSkills: gaps.map((gap) => gap.skill.name),
       resumeText: resume.extractedText,
     };

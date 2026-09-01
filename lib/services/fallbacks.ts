@@ -153,7 +153,10 @@ export function fallbackResumeOptimization(
 ): ResumeOptimizationPayload {
   const normalizedResume = ` ${normalizeSkillKey(context.resumeText)} `;
   const present = context.roleSkills.filter((skill) =>
-    normalizedResume.includes(` ${normalizeSkillKey(skill)} `),
+    [skill, ...(context.roleSkillAliases?.[skill] ?? [])].some((term) => {
+      const key = normalizeSkillKey(term);
+      return key.length > 1 && normalizedResume.includes(` ${key} `);
+    }),
   );
   const missing = context.roleSkills.filter((skill) => !present.includes(skill));
   const keywordCoverage =

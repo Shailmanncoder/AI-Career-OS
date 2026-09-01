@@ -43,11 +43,15 @@ export async function POST(request: Request) {
     if (!resume) return apiError("CONFLICT", "Upload and analyze a resume first.");
     if (!role) return apiError("NOT_FOUND", "That career role could not be found.");
 
-    const roleSkills = role.roleSkills.map((entry) => entry.skill.name);
+    const roleSkills = role.roleSkills.map((entry) => ({
+      name: entry.skill.name,
+      aliases: entry.skill.aliases,
+    }));
+    const roleSkillNames = roleSkills.map((entry) => entry.name);
 
     const context: ResumeRewriteContext = {
       roleTitle: role.title,
-      roleSkills,
+      roleSkills: roleSkillNames,
       missingSkills: gaps.map((gap) => gap.skill.name),
       resumeText: resume.extractedText,
     };

@@ -69,10 +69,21 @@ export function renderResumeText(rewrite: ResumeRewritePayload): string {
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export function scoreRewrittenResume(text: string, roleSkills: string[]): RewriteScore {
-  const sections = splitResumeSections(text);
+export type RoleSkillTerm = { name: string; aliases: string[] };
+
+export function matchedRoleSkills(text: string, roleSkills: RoleSkillTerm[]) {
   const normalized = ` ${normalizeSkillKey(text)} `;
-  const present = roleSkills.filter((skill) => normalized.includes(` ${normalizeSkillKey(skill)} `));
+  return roleSkills.filter((skill) =>
+    [skill.name, ...skill.aliases].some((term) => {
+      const key = normalizeSkillKey(term);
+      return key.length > 1 && normalized.includes(` ${key} `);
+    }),
+  );
+}
+
+export function scoreRewrittenResume(text: string, roleSkills: RoleSkillTerm[]): RewriteScore {
+  const sections = splitResumeSections(text);
+  const present = matchedRoleSkills(text, roleSkills);
   const skillCount = present.length;
   const quality = scoreResumeQuality(text, sections, skillCount);
 
@@ -129,7 +140,7 @@ export function improvementGuidance(score: RewriteScore, placeholders: string[])
   return notes;
 }
 
-export function projectFilledScore(text: string, roleSkills: string[]): RewriteScore {
+export function projectFilledScore(text: string, roleSkills: RoleSkillTerm[]): RewriteScore {
   const filled = text.replace(/\[[^\]]+\]/g, "42 percent");
   return scoreRewrittenResume(filled, roleSkills);
 }

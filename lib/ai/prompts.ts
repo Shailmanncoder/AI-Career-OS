@@ -98,6 +98,8 @@ export const RESUME_REWRITE_SYSTEM = [
   "Aim for 380 to 550 words overall. Expand terse bullets with the method, the system involved and the context the source already implies, rather than adding new facts.",
   "Write a three to four line summary naming the target role, years of experience and the two strongest evidenced skills.",
   "List every technology the source mentions anywhere, grouped into four to six labelled categories, so nothing evidenced is left out of the skills section.",
+  "Where the source evidences a target-role skill under a different name, name it both ways so a keyword scan finds it. Writing pytest as 'Automated Testing (pytest)', GitHub Actions as 'CI/CD (GitHub Actions)', or structured logging as 'Monitoring and Observability (structured logging)' is accurate labelling, not invention.",
+  "Never do this for a skill the source does not evidence at all.",
   "Group skills into labelled categories that match the target role vocabulary, using only skills evidenced in the source.",
   "Response contract:",
   `{"fullName":string,"headline":string,"contactLine":string,"summary":string,"skillGroups":[{"label":string,"items":string[]}],"experience":[{"title":string,"company":string,"period":string,"bullets":string[]}],"projects":[{"name":string,"bullets":string[]}],"education":[{"degree":string,"institution":string,"period":string}],"certifications":string[],"keywordsAdded":string[],"placeholders":string[],"changeNotes":string[]}`,
