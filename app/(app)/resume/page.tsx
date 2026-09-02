@@ -63,7 +63,7 @@ export default async function ResumePage() {
 
       {!resume ? null : (
         <>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-2">
@@ -130,7 +130,7 @@ export default async function ResumePage() {
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default async function ResumePage() {
                   Roles the resume points toward. These are signals, not the scored career matches.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-3">
+              <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {signals.map((signal) => (
                   <div key={signal.role} className="rounded-lg border p-4">
                     <div className="flex items-center justify-between gap-2">
@@ -230,7 +230,7 @@ export default async function ResumePage() {
             </Card>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

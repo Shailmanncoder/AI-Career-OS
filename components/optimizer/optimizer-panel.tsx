@@ -136,7 +136,7 @@ export function OptimizerPanel({
                 a compatibility claim about any specific vendor&apos;s applicant tracking system.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-4">
+            <CardContent className="grid grid-cols-1 gap-6 sm:grid-cols-4">
               <div className="flex flex-col items-center gap-2">
                 <ScoreRing
                   value={report.atsReadinessScore}
@@ -172,7 +172,7 @@ export function OptimizerPanel({
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -293,7 +293,7 @@ export function OptimizerPanel({
                       {rewrite.section}
                     </Badge>
 
-                    <div className="grid gap-2 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                       <div className="rounded-lg border border-destructive/25 bg-destructive/5 p-3">
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-destructive">
                           Original

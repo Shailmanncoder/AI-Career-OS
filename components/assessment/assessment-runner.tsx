@@ -192,7 +192,7 @@ export function AssessmentRunner({ skills }: { skills: AssessmentSkillOption[] }
         <CardContent className="space-y-5">
           {error ? <ErrorPanel message={error} onRetry={generate} /> : null}
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="assessment-skill">Skill</Label>
               <Select value={skillId} onValueChange={setSkillId}>

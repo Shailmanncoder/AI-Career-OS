@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LogOut, Settings2, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Settings2, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +22,14 @@ export function UserMenu({ name, email }: { name: string | null; email: string }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu">
-          <Avatar>
+        <Button variant="ghost" className="h-auto gap-2 px-1.5 py-1.5" aria-label="Account menu">
+          <Avatar className="h-8 w-8">
             <AvatarFallback>{initialsOf(name ?? email)}</AvatarFallback>
           </Avatar>
+          <span className="hidden max-w-32 truncate text-sm font-medium sm:block">
+            {name ?? email}
+          </span>
+          <ChevronDown className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

@@ -90,6 +90,39 @@ export async function loadDashboardData(userId: string) {
     ...interviews.map((session) => session.createdAt),
   ];
 
+  const focusRoleSkills = focusRoleId
+    ? await prisma.careerRoleSkill.findMany({
+        where: { careerRoleId: focusRoleId },
+        include: { skill: true },
+      })
+    : [];
+
+  const levelBySkill = new Map(candidateSkills.map((entry) => [entry.skillId, entry.level]));
+  const skillGapBreakdown = focusRoleSkills.reduce(
+    (totals, roleSkill) => {
+      const level = levelBySkill.get(roleSkill.skillId) ?? 0;
+      if (level >= roleSkill.requiredLevel) totals.known += 1;
+      else if (level > 0) totals.learning += 1;
+      else totals.missing += 1;
+      return totals;
+    },
+    { known: 0, learning: 0, missing: 0 },
+  );
+
+  const dayKey = (value: Date) => value.toISOString().slice(0, 10);
+  const activityByDay = new Map<string, number>();
+  for (const date of streakDates) {
+    const key = dayKey(date);
+    activityByDay.set(key, (activityByDay.get(key) ?? 0) + 1);
+  }
+  const streakHistory = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (13 - index));
+    const key = dayKey(date);
+    return { label: key.slice(5), value: activityByDay.get(key) ?? 0 };
+  });
+
   return {
     profile,
     resume,
@@ -106,6 +139,8 @@ export async function loadDashboardData(userId: string) {
     simulations,
     activities,
     totalRoleCount,
+    skillGapBreakdown,
+    streakHistory,
     stats: {
       skillCount: candidateSkills.length,
       verifiedSkillCount: candidateSkills.filter((skill) => skill.verified).length,

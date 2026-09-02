@@ -97,7 +97,7 @@ export function LearningResources({ groups }: { groups: ResourceGroup[] }) {
               </span>
             </div>
 
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
               {group.resources.map((resource) => {
                 const done = completed[resource.id];
                 return (

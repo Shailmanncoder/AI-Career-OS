@@ -1,112 +1,89 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  ArrowRight,
-  Braces,
-  ClipboardCheck,
-  Flame,
-  Gauge,
-  Route,
-  ShieldAlert,
-  Sparkles,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { StatCard } from "@/components/shared/stat-card";
-import { PageHeader } from "@/components/shared/page-header";
+import { DemoDataNotice } from "@/components/shared/ai-notice";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ScoreRing } from "@/components/shared/score-ring";
-import { PriorityBadge } from "@/components/shared/priority-badge";
-import { AiEstimateBadge, DemoDataNotice } from "@/components/shared/ai-notice";
-import { CareerComparison } from "@/components/charts/career-comparison";
-import { GapBars } from "@/components/charts/gap-bars";
-import { SkillRadar, type SkillRadarDatum } from "@/components/charts/skill-radar";
+import { ProgressRing } from "@/components/charts/progress-ring";
+import { SkillGapDonut } from "@/components/charts/skill-gap-donut";
+import { ScoreGauge } from "@/components/charts/score-gauge";
+import { StreakSparkline } from "@/components/charts/streak-sparkline";
+import { MilestoneTrack, type Milestone } from "@/components/dashboard/milestone-track";
+import { SkillsSnapshot } from "@/components/dashboard/skills-snapshot";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { requireSessionUser } from "@/lib/auth/session";
 import { loadDashboardData, resolveNextAction } from "@/lib/services/dashboard-service";
-import { prisma } from "@/lib/db/client";
-import { categoryLabel } from "@/lib/services/resume-service";
-import { formatRelative } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-async function buildRadarData(
-  userId: string,
-  careerRoleId: string | null,
-): Promise<SkillRadarDatum[]> {
-  const [candidateSkills, roleSkills] = await Promise.all([
-    prisma.candidateSkill.findMany({ where: { userId }, include: { skill: true } }),
-    careerRoleId
-      ? prisma.careerRoleSkill.findMany({
-          where: { careerRoleId },
-          include: { skill: true },
-        })
-      : Promise.resolve([]),
-  ]);
+const HORIZON_WEEKS: Record<string, number> = { DAYS_30: 4, DAYS_60: 8, DAYS_90: 12 };
 
-  const buckets = new Map<string, { candidate: number[]; required: number[] }>();
+function buildMilestones(percentage: number): Milestone[] {
+  const stages = [
+    { days: "30 Days", label: "Foundation", threshold: 33 },
+    { days: "60 Days", label: "Build & Practice", threshold: 66 },
+    { days: "90 Days", label: "Master & Apply", threshold: 100 },
+  ];
 
-  for (const entry of candidateSkills) {
-    const key = categoryLabel(entry.skill.category);
-    const bucket = buckets.get(key) ?? { candidate: [], required: [] };
-    bucket.candidate.push(entry.level);
-    buckets.set(key, bucket);
-  }
-
-  for (const entry of roleSkills) {
-    const key = categoryLabel(entry.skill.category);
-    const bucket = buckets.get(key) ?? { candidate: [], required: [] };
-    bucket.required.push(entry.requiredLevel);
-    buckets.set(key, bucket);
-  }
-
-  const average = (values: number[]) =>
-    values.length === 0 ? 0 : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
-
-  return Array.from(buckets.entries())
-    .map(([category, bucket]) => ({
-      category,
-      candidate: average(bucket.candidate),
-      required: average(bucket.required),
-    }))
-    .filter((entry) => entry.candidate > 0 || entry.required > 0)
-    .sort((a, b) => b.required - a.required)
-    .slice(0, 8);
+  return stages.map((stage, index) => {
+    const previous = index === 0 ? 0 : stages[index - 1].threshold;
+    if (percentage >= stage.threshold) return { ...stage, state: "done" as const };
+    if (percentage >= previous) return { ...stage, state: "current" as const };
+    return { ...stage, state: "upcoming" as const };
+  });
 }
 
 export default async function DashboardPage() {
   const user = await requireSessionUser();
   const data = await loadDashboardData(user.id);
   const nextAction = resolveNextAction(data);
-  const radarData = await buildRadarData(user.id, data.focusRoleId);
 
+  const firstName = (data.analysis?.fullName ?? user.name ?? "there").split(" ")[0];
   const focusRole =
     data.matches.find((match) => match.careerRoleId === data.focusRoleId) ?? data.topMatch;
   const focusScore = focusRole?.score ?? 0;
-  const focusIsTarget = Boolean(
-    data.profile?.targetCareerId && focusRole?.careerRoleId === data.profile.targetCareerId,
+  const gaps = data.skillGapBreakdown;
+  const roadmapPercent = data.roadmapProgress.percentage;
+  const roadmapWeeks = data.roadmap ? HORIZON_WEEKS[data.roadmap.horizon] ?? 12 : 12;
+  const currentPhase = data.roadmap?.phases.find((phase) =>
+    phase.tasks.some((task) => !task.completed),
   );
-
-  const firstName = (data.analysis?.fullName ?? user.name ?? "there").split(" ")[0];
 
   return (
     <>
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description="Your skill profile, career compatibility, and the single next action that moves you forward."
-        actions={
-          <Button asChild>
-            <Link href={nextAction.href}>
-              {nextAction.cta}
-              <ArrowRight />
-            </Link>
-          </Button>
-        }
-      />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Welcome back, {firstName}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Track your progress and close the gap to your target role.
+          </p>
+        </div>
+
+        <Card className="w-full shrink-0 p-4 lg:w-[300px]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Flame className="h-3.5 w-3.5 text-warning" />
+                Learning streak
+              </p>
+              <p className="display-figure mt-1 text-2xl leading-none">
+                {data.stats.streak}
+                <span className="ml-1 text-sm font-normal text-muted-foreground">
+                  {data.stats.streak === 1 ? "day" : "days"}
+                </span>
+              </p>
+            </div>
+            <StreakSparkline data={data.streakHistory} width={140} height={44} />
+          </div>
+        </Card>
+      </div>
 
       {user.isDemo ? <DemoDataNotice /> : null}
 
@@ -114,317 +91,158 @@ export default async function DashboardPage() {
         <EmptyState
           icon={Sparkles}
           title="Start with your resume"
-          description="AI CareerOS derives your skills, career matches, gaps, and roadmap from a single resume upload. Nothing else needs to be filled in by hand."
+          description="Your skills, career matches, gaps and roadmap are all derived from a single resume upload."
           actionLabel="Upload your resume"
           actionHref="/resume"
         />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Top compatibility"
-          value={data.stats.topScore > 0 ? data.stats.topScore : "—"}
-          suffix="%"
-          hint={data.topMatch?.careerRole.title ?? "Run career matching"}
-          icon={Target}
-          tone="primary"
-        />
-        <StatCard
-          label="Resume score"
-          value={data.stats.resumeScore > 0 ? data.stats.resumeScore : "—"}
-          hint={data.stats.atsScore > 0 ? `ATS readiness ${data.stats.atsScore}` : "Upload a resume"}
-          icon={Gauge}
-        />
-        <StatCard
-          label="Skills tracked"
-          value={data.stats.skillCount}
-          hint={`${data.stats.verifiedSkillCount} verified by assessment`}
-          icon={Braces}
-        />
-        <StatCard
-          label="Roadmap progress"
-          value={data.stats.roadmapPercentage}
-          suffix="%"
-          hint={
-            data.roadmapProgress.total > 0
-              ? `${data.roadmapProgress.completed} of ${data.roadmapProgress.total} tasks`
-              : "No roadmap yet"
-          }
-          icon={Route}
-          tone="success"
-        />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Overall progress</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center pb-6 pt-2">
+            <ProgressRing
+              value={roadmapPercent}
+              caption={
+                data.roadmapProgress.total > 0
+                  ? `${data.roadmapProgress.completed} of ${data.roadmapProgress.total} roadmap tasks`
+                  : "Generate a roadmap to begin"
+              }
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Top matched career</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col justify-between gap-4">
+            <div>
+              <p className="text-xl font-semibold leading-snug tracking-tight">
+                {focusRole?.careerRole.title ?? "No match yet"}
+              </p>
+              <p className="display-figure mt-3 text-[30px] leading-none">
+                {focusScore}
+                <span className="text-lg">%</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Compatibility</p>
+              <Progress value={focusScore} className="mt-3 h-2" />
+            </div>
+
+            <Button asChild variant="outline" className="w-full">
+              <Link href={focusRole ? `/careers/${focusRole.careerRole.slug}` : "/careers"}>
+                View details
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Skill gap overview</CardTitle>
+            <CardDescription className="text-xs">
+              Against {focusRole?.careerRole.title ?? "your target role"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <SkillGapDonut
+              segments={[
+                { label: "Known skills", value: gaps.known, color: "hsl(var(--chart-1))" },
+                { label: "Learning", value: gaps.learning, color: "hsl(var(--chart-4))" },
+                { label: "Missing", value: gaps.missing, color: "hsl(var(--destructive))" },
+              ]}
+            />
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
             <div>
-              <CardTitle>Career compatibility</CardTitle>
-              <CardDescription>
-                Deterministic weighted matching across all {data.totalRoleCount} roles. Showing your
-                top {data.matches.length}.
+              <CardTitle className="text-base">Roadmap progress</CardTitle>
+              <CardDescription className="text-xs">
+                {data.roadmap ? `${roadmapWeeks}-week plan · ${currentPhase?.title ?? "Complete"}` : "No active roadmap"}
               </CardDescription>
             </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/careers">All roles</Link>
-            </Button>
+            <span className="shrink-0 text-lg font-semibold tabular-nums">{roadmapPercent}%</span>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Progress value={roadmapPercent} className="h-2" />
+            <MilestoneTrack milestones={buildMilestones(roadmapPercent)} />
+            {!data.roadmap ? (
+              <Button asChild size="sm" className="w-full sm:w-auto">
+                <Link href="/roadmap">Generate roadmap</Link>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Recent activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <CareerComparison
-              data={data.matches.map((match) => ({
-                role: match.careerRole.title,
-                score: match.score,
+            <ActivityFeed items={data.activities.slice(0, 5)} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Skills snapshot</CardTitle>
+            <CardDescription className="text-xs">
+              {data.stats.skillCount} tracked · {data.stats.verifiedSkillCount} verified by assessment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SkillsSnapshot
+              skills={data.candidateSkills.slice(0, 6).map((entry) => ({
+                name: entry.skill.name,
+                level: entry.level,
               }))}
             />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Next action</CardTitle>
-            <CardDescription>The highest leverage thing you can do right now.</CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Resume score</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="flex flex-col items-center gap-3 rounded-lg bg-muted/50 p-5 text-center">
-              <ScoreRing
-                value={focusScore}
-                size={104}
-                label={focusIsTarget ? "Target" : "Best fit"}
-                tone={focusScore >= 75 ? "success" : focusScore >= 50 ? "primary" : "warning"}
-              />
-              <div className="space-y-0.5 text-center">
-                <p className="text-sm font-medium">{focusRole?.careerRole.title ?? "No match yet"}</p>
-                {focusIsTarget && data.topMatch && data.topMatch.careerRoleId !== focusRole?.careerRoleId ? (
-                  <p className="text-xs text-muted-foreground">
-                    Best fit is {data.topMatch.careerRole.title} at {data.topMatch.score}%
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-semibold">{nextAction.label}</p>
-              <p className="text-sm leading-relaxed text-muted-foreground">{nextAction.description}</p>
-              <Button asChild className="w-full">
-                <Link href={nextAction.href}>
-                  {nextAction.cta}
-                  <ArrowRight />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Flame className="h-4 w-4 text-warning" />
-                Learning streak
-              </span>
-              <span className="text-sm font-semibold tabular-nums">
-                {data.stats.streak} {data.stats.streak === 1 ? "day" : "days"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Skill coverage by category
-              <AiEstimateBadge />
-            </CardTitle>
-            <CardDescription>
-              Your average level against what {focusRole?.careerRole.title ?? "your target role"} expects.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SkillRadar data={radarData} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-            <div>
-              <CardTitle>Priority skill gaps</CardTitle>
-              <CardDescription>
-                Ranked by gap size, role weight, and the foundation you already have.
-              </CardDescription>
-            </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/simulator">Simulate</Link>
+          <CardContent className="flex flex-col items-center gap-3 pb-6">
+            <ScoreGauge
+              value={data.stats.resumeScore}
+              caption={
+                data.stats.atsScore > 0 ? `ATS readiness ${data.stats.atsScore}` : "Upload a resume"
+              }
+            />
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href="/optimizer">Improve it</Link>
             </Button>
-          </CardHeader>
-          <CardContent>
-            {data.gaps.length === 0 ? (
-              <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
-                <ShieldAlert className="h-5 w-5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  No gaps calculated yet. Analyze a resume to populate your skill profile.
-                </p>
-              </div>
-            ) : (
-              <GapBars
-                data={data.gaps.slice(0, 6).map((gap) => ({
-                  skill: gap.skill.name,
-                  current: gap.currentLevel,
-                  required: gap.requiredLevel,
-                  gap: gap.gap,
-                  priority: gap.priority,
-                }))}
-              />
-            )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-            <div>
-              <CardTitle>Active roadmap</CardTitle>
-              <CardDescription>
-                {data.roadmap
-                  ? data.roadmap.title
-                  : "Generate a plan to turn your gaps into weekly work."}
-              </CardDescription>
-            </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/roadmap">Open</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {data.roadmap ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Progress value={data.roadmapProgress.percentage} className="h-2" />
-                  <span className="shrink-0 text-sm font-semibold tabular-nums">
-                    {data.roadmapProgress.percentage}%
-                  </span>
-                </div>
-                <ul className="space-y-2">
-                  {data.roadmap.phases.slice(0, 5).map((phase) => {
-                    const done = phase.tasks.filter((task) => task.completed).length;
-                    return (
-                      <li
-                        key={phase.id}
-                        className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{phase.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Weeks {phase.weekStart}–{phase.weekEnd}
-                          </p>
-                        </div>
-                        <Badge variant={done === phase.tasks.length ? "success" : "muted"}>
-                          {done}/{phase.tasks.length}
-                        </Badge>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : (
-              <div className="flex h-48 flex-col items-center justify-center gap-3 text-center">
-                <Route className="h-5 w-5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  No active roadmap. Generate one from your prioritised gaps.
-                </p>
-                <Button asChild size="sm">
-                  <Link href="/roadmap">Generate roadmap</Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
-            <CardDescription>Everything you have done in AI CareerOS.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.activities.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Your activity will appear here once you upload a resume.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {data.activities.slice(0, 7).map((activity) => (
-                  <li key={activity.id} className="flex gap-3">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                    <div className="min-w-0">
-                      <p className="text-sm leading-snug">{activity.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatRelative(activity.createdAt)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Assessment average"
-          value={data.stats.assessmentAverage > 0 ? data.stats.assessmentAverage : "—"}
-          hint={`${data.attempts.length} scored attempts`}
-          icon={ClipboardCheck}
-        />
-        <StatCard
-          label="Interview average"
-          value={data.stats.interviewAverage > 0 ? data.stats.interviewAverage : "—"}
-          hint={`${data.interviews.length} sessions`}
-          icon={TrendingUp}
-        />
-        <StatCard
-          label="Resources completed"
-          value={data.stats.learningCompleted}
-          hint="Marked done from your recommendations"
-          icon={Sparkles}
-        />
-      </div>
-
-      {data.gaps.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gap detail</CardTitle>
-            <CardDescription>
-              Current level against required level for {focusRole?.careerRole.title ?? "your target role"}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead className="border-y bg-muted/40 text-left">
-                  <tr>
-                    <th scope="col" className="px-6 py-2.5 font-medium text-muted-foreground">Skill</th>
-                    <th scope="col" className="px-6 py-2.5 font-medium text-muted-foreground">Current</th>
-                    <th scope="col" className="px-6 py-2.5 font-medium text-muted-foreground">Required</th>
-                    <th scope="col" className="px-6 py-2.5 font-medium text-muted-foreground">Gap</th>
-                    <th scope="col" className="px-6 py-2.5 font-medium text-muted-foreground">Priority</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.gaps.map((gap) => (
-                    <tr key={gap.id} className="border-b last:border-b-0">
-                      <td className="px-6 py-3 font-medium">{gap.skill.name}</td>
-                      <td className="px-6 py-3 tabular-nums text-muted-foreground">{gap.currentLevel}</td>
-                      <td className="px-6 py-3 tabular-nums text-muted-foreground">{gap.requiredLevel}</td>
-                      <td className="px-6 py-3 tabular-nums font-medium">{gap.gap}</td>
-                      <td className="px-6 py-3">
-                        <PriorityBadge priority={gap.priority} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      <Card className="border-primary/25">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <Badge variant="muted" className="mb-1">
+              Next action
+            </Badge>
+            <p className="text-sm font-semibold">{nextAction.label}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{nextAction.description}</p>
+          </div>
+          <Button asChild className="shrink-0">
+            <Link href={nextAction.href}>
+              {nextAction.cta}
+              <ArrowRight />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </>
   );
 }

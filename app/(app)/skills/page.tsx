@@ -85,7 +85,7 @@ export default async function SkillsPage() {
         </AlertDescription>
       </Alert>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Skills tracked" value={skills.length} icon={Braces} tone="primary" />
         <StatCard
           label="Verified by assessment"
@@ -102,7 +102,7 @@ export default async function SkillsPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {categories.map(([category, entries]) => (
           <Card key={category}>
             <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">

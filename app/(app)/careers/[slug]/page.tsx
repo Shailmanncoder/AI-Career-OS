@@ -108,7 +108,7 @@ export default async function CareerDetailPage({
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="flex flex-col items-center justify-center gap-3 p-6">
           <ScoreRing
             value={match?.score ?? 0}
@@ -148,7 +148,7 @@ export default async function CareerDetailPage({
             )}
 
             {strengths.length > 0 || focusAreas.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {strengths.length > 0 ? (
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -186,7 +186,7 @@ export default async function CareerDetailPage({
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Skill gaps</CardTitle>
@@ -336,7 +336,7 @@ export default async function CareerDetailPage({
                       {group.currentLevel} to {group.requiredLevel}
                     </span>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {group.resources.map((resource) => (
                       <a
                         key={resource.id}
