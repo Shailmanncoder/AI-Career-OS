@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.vercel
+.claude
+.env
+.env.*
+!.env.example
+coverage
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+Dockerfile
+docker-compose.yml
+* [0-9]
+* [0-9].*

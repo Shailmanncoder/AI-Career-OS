@@ -166,6 +166,42 @@ npm run dev
 
 ---
 
+## Run with Docker
+
+The whole stack, application and database, from one command. Nothing else needs installing.
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:3000 and sign in with the demo account below.
+
+Three services come up in order: Postgres, a one-shot `migrate` container that applies migrations and seeds the catalogue and demo candidate, then the application once migrations have succeeded.
+
+To use live Gemini rather than the offline engine, put a key in the environment before starting:
+
+```bash
+GEMINI_API_KEY=your-key docker compose up --build
+```
+
+`AUTH_SECRET` defaults to a development value. Set your own for anything reachable by other people:
+
+```bash
+AUTH_SECRET=$(openssl rand -base64 32) docker compose up --build
+```
+
+| Command | Purpose |
+| --- | --- |
+| `docker compose up --build` | Build and start everything |
+| `docker compose logs -f app` | Follow application logs |
+| `docker compose logs migrate` | See migration and seed output |
+| `docker compose down` | Stop, keeping the database |
+| `docker compose down -v` | Stop and delete the database volume |
+
+The runtime image is a Next.js standalone build and carries no build tooling. Prisma's CLI and the seed script live only in the migrate image, which exits once its work is done.
+
+---
+
 ## Demo account
 
 | | |
