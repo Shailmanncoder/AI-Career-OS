@@ -81,6 +81,7 @@ export async function POST(request: Request) {
 
     return apiSuccess({
       roleTitle: role.title,
+      rewrite: aiResult.data,
       improvedText,
       before,
       after,

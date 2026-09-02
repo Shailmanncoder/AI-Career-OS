@@ -71,11 +71,68 @@ export function cleanResumeText(raw: string) {
   return compacted.join("\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, MAX_STORED_CHARS);
 }
 
+type PdfTextItem = {
+  str?: string;
+  transform?: number[];
+  width?: number;
+  hasEOL?: boolean;
+};
+
+const LINE_TOLERANCE = 2.5;
+
+export function assembleLines(items: PdfTextItem[]) {
+  const placed = items
+    .filter((item) => typeof item.str === "string")
+    .map((item) => ({
+      text: item.str as string,
+      x: item.transform?.[4] ?? 0,
+      y: item.transform?.[5] ?? 0,
+      width: item.width ?? 0,
+    }))
+    .filter((item) => item.text.length > 0);
+
+  if (placed.length === 0) return "";
+
+  const rows: Array<{ y: number; parts: typeof placed }> = [];
+  for (const item of placed) {
+    const row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= LINE_TOLERANCE);
+    if (row) {
+      row.parts.push(item);
+      continue;
+    }
+    rows.push({ y: item.y, parts: [item] });
+  }
+
+  rows.sort((a, b) => b.y - a.y);
+
+  return rows
+    .map((row) => {
+      const parts = [...row.parts].sort((a, b) => a.x - b.x);
+      let line = "";
+      let cursor: number | null = null;
+      for (const part of parts) {
+        if (cursor !== null && part.x - cursor > 1.2 && !/\s$/.test(line)) line += " ";
+        line += part.text;
+        cursor = part.x + part.width;
+      }
+      return line.trim();
+    })
+    .filter((line) => line.length > 0)
+    .join("\n");
+}
+
 async function extractPdfText(buffer: Buffer) {
-  const { extractText, getDocumentProxy } = await import("unpdf");
+  const { getDocumentProxy } = await import("unpdf");
   const document = await getDocumentProxy(new Uint8Array(buffer));
-  const { text } = await extractText(document, { mergePages: true });
-  return Array.isArray(text) ? text.join("\n") : text;
+
+  const pages: string[] = [];
+  for (let index = 1; index <= document.numPages; index += 1) {
+    const page = await document.getPage(index);
+    const content = await page.getTextContent();
+    pages.push(assembleLines(content.items as PdfTextItem[]));
+  }
+
+  return pages.filter((page) => page.length > 0).join("\n\n");
 }
 
 async function extractDocxText(buffer: Buffer) {

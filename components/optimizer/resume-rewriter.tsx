@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Copy, Download, Loader2, Sparkles, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  Loader2,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +31,7 @@ type Score = {
 
 type RewriteResponse = {
   roleTitle: string;
+  rewrite: unknown;
   improvedText: string;
   before: Score;
   after: Score;
@@ -37,6 +47,7 @@ export function ResumeRewriter({ careerRoleId }: { careerRoleId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RewriteResponse | null>(null);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
 
   const generate = async () => {
     if (!careerRoleId) {
@@ -70,15 +81,38 @@ export function ResumeRewriter({ careerRoleId }: { careerRoleId: string }) {
     }
   };
 
-  const download = () => {
+  const download = async (format: "docx" | "pdf") => {
     if (!result) return;
-    const blob = new Blob([result.improvedText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "improved-resume.txt";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setExporting(format);
+
+    try {
+      const response = await fetch("/api/resume/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format, rewrite: result.rewrite }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        toast.error(payload?.error?.message ?? "The file could not be generated.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const named = /filename="([^"]+)"/.exec(disposition)?.[1];
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = named ?? `improved-resume.${format}`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded as ${format.toUpperCase()}`);
+    } catch {
+      toast.error("Could not reach the server. Check your connection and retry.");
+    } finally {
+      setExporting(null);
+    }
   };
 
   const delta = result ? result.after.atsScore - result.before.atsScore : 0;
@@ -194,15 +228,28 @@ export function ResumeRewriter({ careerRoleId }: { careerRoleId: string }) {
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium">Improved resume</p>
+                <p className="text-sm font-medium">Improved resume — download as</p>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={copy}>
                     {copied ? <Check /> : <Copy />}
                     {copied ? "Copied" : "Copy"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={download}>
-                    <Download />
-                    Download
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void download("docx")}
+                    disabled={exporting !== null}
+                  >
+                    {exporting === "docx" ? <Loader2 className="animate-spin" /> : <FileText />}
+                    DOCX
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => void download("pdf")}
+                    disabled={exporting !== null}
+                  >
+                    {exporting === "pdf" ? <Loader2 className="animate-spin" /> : <Download />}
+                    PDF
                   </Button>
                 </div>
               </div>
