@@ -17,7 +17,6 @@ import {
   heuristicGradeOpenAnswer,
 } from "@/lib/services/fallbacks";
 import { roadmapPlanSchema } from "@/lib/validation/ai";
-import { matchedRoleSkills } from "@/lib/services/resume-rewrite";
 import { MAX_RESUME_BYTES } from "@/lib/validation/forms";
 import { SKILL_SEEDS } from "@/lib/data/skills";
 import { CAREER_ROLE_SEEDS } from "@/lib/data/careers";
@@ -348,40 +347,5 @@ describe("seed catalogue integrity", () => {
       expect(seen.has(key), key).toBe(false);
       seen.add(key);
     }
-  });
-});
-
-describe("role skill matching counts catalogue aliases", () => {
-  const roleSkills = [
-    { name: "Automated Testing", aliases: ["pytest", "jest", "unit testing"] },
-    { name: "Git & Version Control", aliases: ["github", "gitlab"] },
-    { name: "Monitoring & Observability", aliases: ["logging", "prometheus"] },
-    { name: "GraphQL", aliases: ["apollo"] },
-  ];
-
-  it("matches a skill named directly", () => {
-    const matched = matchedRoleSkills("We used GraphQL heavily", roleSkills);
-    expect(matched.map((s) => s.name)).toEqual(["GraphQL"]);
-  });
-
-  it("matches a skill evidenced only through an alias", () => {
-    const matched = matchedRoleSkills("Wrote pytest suites and pushed to github", roleSkills);
-    expect(matched.map((s) => s.name).sort()).toEqual([
-      "Automated Testing",
-      "Git & Version Control",
-    ]);
-  });
-
-  it("does not match a skill that is absent", () => {
-    expect(matchedRoleSkills("I write poetry", roleSkills)).toHaveLength(0);
-  });
-
-  it("counts each role skill at most once", () => {
-    const matched = matchedRoleSkills("pytest pytest jest unit testing", roleSkills);
-    expect(matched).toHaveLength(1);
-  });
-
-  it("is case and punctuation insensitive", () => {
-    expect(matchedRoleSkills("PyTest and GitHub", roleSkills)).toHaveLength(2);
   });
 });

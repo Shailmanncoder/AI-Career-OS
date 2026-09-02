@@ -27,7 +27,6 @@ import {
 import { ScoreRing } from "@/components/shared/score-ring";
 import { ErrorPanel } from "@/components/shared/error-panel";
 import { postJson } from "@/lib/api/client";
-import { ResumeRewriter } from "@/components/optimizer/resume-rewriter";
 import type { ResumeOptimizationPayload } from "@/lib/validation/ai";
 
 type OptimizeResponse = {
@@ -126,8 +125,6 @@ export function OptimizerPanel({
           </AlertDescription>
         </Alert>
       ) : null}
-
-      <ResumeRewriter careerRoleId={roleId} />
 
       {report ? (
         <>
