@@ -21,6 +21,7 @@ export async function loadDashboardData(userId: string) {
     simulations,
     activities,
     learningDone,
+    totalRoleCount,
   ] = await Promise.all([
     prisma.profile.findUnique({ where: { userId }, include: { targetCareer: true } }),
     prisma.resume.findFirst({
@@ -64,21 +65,28 @@ export async function loadDashboardData(userId: string) {
       take: 12,
     }),
     prisma.learningProgress.count({ where: { userId, completed: true } }),
+    prisma.careerRole.count(),
   ]);
-
-  const totalRoleCount = await prisma.careerRole.count();
 
   const topMatch = matches[0] ?? null;
   const focusRoleId = profile?.targetCareerId ?? topMatch?.careerRoleId ?? null;
 
-  const gaps = focusRoleId
-    ? await prisma.skillGap.findMany({
-        where: { userId, careerRoleId: focusRoleId },
-        include: { skill: true },
-        orderBy: { priorityScore: "desc" },
-        take: 8,
-      })
-    : [];
+  const [gaps, focusRoleSkills] = await Promise.all([
+    focusRoleId
+      ? prisma.skillGap.findMany({
+          where: { userId, careerRoleId: focusRoleId },
+          include: { skill: true },
+          orderBy: { priorityScore: "desc" },
+          take: 8,
+        })
+      : Promise.resolve([]),
+    focusRoleId
+      ? prisma.careerRoleSkill.findMany({
+          where: { careerRoleId: focusRoleId },
+          include: { skill: true },
+        })
+      : Promise.resolve([]),
+  ]);
 
   const roadmapProgress = roadmap
     ? summarizeRoadmapProgress(roadmap.phases)
@@ -89,13 +97,6 @@ export async function loadDashboardData(userId: string) {
     ...attempts.map((attempt) => attempt.submittedAt ?? attempt.startedAt),
     ...interviews.map((session) => session.createdAt),
   ];
-
-  const focusRoleSkills = focusRoleId
-    ? await prisma.careerRoleSkill.findMany({
-        where: { careerRoleId: focusRoleId },
-        include: { skill: true },
-      })
-    : [];
 
   const levelBySkill = new Map(candidateSkills.map((entry) => [entry.skillId, entry.level]));
   const skillGapBreakdown = focusRoleSkills.reduce(
