@@ -5,7 +5,7 @@ import { apiError, apiSuccess, handleRouteError, validationError } from "@/lib/a
 import { processResumeAnalysis } from "@/lib/services/resume-service";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const bodySchema = z.object({ resumeId: z.string().min(1).optional() });
 

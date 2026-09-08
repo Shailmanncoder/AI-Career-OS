@@ -1,12 +1,14 @@
 import type { z, ZodTypeAny } from "zod";
 import { env, isAiConfigured } from "@/lib/env";
-import { aiFailure, type AiResult } from "./errors";
+import { aiFailure, type AiErrorCode, type AiResult } from "./errors";
 import { parseJsonLoose } from "./json";
 
 const API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models";
-const REQUEST_TIMEOUT_MS = 45_000;
-const MAX_ATTEMPTS = 3;
-const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+export const AI_TIME_BUDGET_MS = 50_000;
+const ATTEMPT_TIMEOUT_MS = 20_000;
+const MIN_ATTEMPT_MS = 3_000;
+const CONTENT_ATTEMPTS_PER_MODEL = 2;
+const CONTENT_RETRY_DELAY_MS = 350;
 
 type GeminiCandidate = {
   content?: { parts?: Array<{ text?: string }> };
@@ -17,6 +19,10 @@ type GeminiResponse = {
   candidates?: GeminiCandidate[];
   promptFeedback?: { blockReason?: string };
 };
+
+type CallOutcome =
+  | { ok: true; payload: GeminiResponse }
+  | { ok: false; code: AiErrorCode; status?: number; detail?: string };
 
 export type StructuredRequest<Schema extends ZodTypeAny> = {
   system: string;
@@ -38,16 +44,27 @@ function readCandidateText(payload: GeminiResponse) {
     .trim();
 }
 
-async function callGemini(body: unknown): Promise<
-  | { ok: true; payload: GeminiResponse }
-  | { ok: false; retryable: boolean; code: "RATE_LIMIT" | "UPSTREAM" | "TIMEOUT" | "NETWORK" }
-> {
+function classifyStatus(status: number): AiErrorCode {
+  if (status === 429) return "RATE_LIMIT";
+  if (status === 408 || status === 504) return "TIMEOUT";
+  return "UPSTREAM";
+}
+
+function logFailure(model: string, code: AiErrorCode, status?: number, detail?: string) {
+  console.error("[ai]", model, code, status ?? "", detail ? detail.slice(0, 240) : "");
+}
+
+async function callGemini(
+  model: string,
+  body: unknown,
+  timeoutMs: number,
+): Promise<CallOutcome> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(
-      `${API_ROOT}/${encodeURIComponent(env.geminiModel)}:generateContent`,
+      `${API_ROOT}/${encodeURIComponent(model)}:generateContent`,
       {
         method: "POST",
         headers: {
@@ -61,19 +78,19 @@ async function callGemini(body: unknown): Promise<
     );
 
     if (!response.ok) {
-      const retryable = RETRYABLE_STATUS.has(response.status);
-      return {
-        ok: false,
-        retryable,
-        code: response.status === 429 ? "RATE_LIMIT" : "UPSTREAM",
-      };
+      const detail = await response.text().catch(() => "");
+      return { ok: false, code: classifyStatus(response.status), status: response.status, detail };
     }
 
     const payload = (await response.json()) as GeminiResponse;
     return { ok: true, payload };
   } catch (error) {
     const aborted = error instanceof Error && error.name === "AbortError";
-    return { ok: false, retryable: true, code: aborted ? "TIMEOUT" : "NETWORK" };
+    return {
+      ok: false,
+      code: aborted ? "TIMEOUT" : "NETWORK",
+      detail: error instanceof Error ? error.message : undefined,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -100,44 +117,56 @@ export async function generateStructured<Schema extends ZodTypeAny>({
     safetySettings: [],
   };
 
-  let lastCode: "RATE_LIMIT" | "UPSTREAM" | "TIMEOUT" | "NETWORK" | "MALFORMED" | "SCHEMA" | "EMPTY" =
-    "UPSTREAM";
+  const startedAt = Date.now();
+  const remaining = () => AI_TIME_BUDGET_MS - (Date.now() - startedAt);
+  let lastCode: AiErrorCode = "UPSTREAM";
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    const result = await callGemini(body);
+  for (const model of env.geminiModels) {
+    for (let attempt = 1; attempt <= CONTENT_ATTEMPTS_PER_MODEL; attempt += 1) {
+      const budget = remaining();
+      if (budget < MIN_ATTEMPT_MS) return aiFailure(lastCode);
 
-    if (!result.ok) {
-      lastCode = result.code;
-      if (!result.retryable || attempt === MAX_ATTEMPTS) break;
-      await delay(attempt * 900);
-      continue;
+      const result = await callGemini(model, body, Math.min(ATTEMPT_TIMEOUT_MS, budget));
+
+      if (!result.ok) {
+        lastCode = result.code;
+        logFailure(model, result.code, result.status, result.detail);
+        break;
+      }
+
+      const blockReason = result.payload.promptFeedback?.blockReason;
+      if (blockReason) {
+        lastCode = "EMPTY";
+        logFailure(model, "EMPTY", undefined, `blocked: ${blockReason}`);
+        break;
+      }
+
+      const text = readCandidateText(result.payload);
+      if (!text) {
+        lastCode = "EMPTY";
+        logFailure(model, "EMPTY", undefined, result.payload.candidates?.[0]?.finishReason);
+        if (attempt < CONTENT_ATTEMPTS_PER_MODEL) await delay(CONTENT_RETRY_DELAY_MS);
+        continue;
+      }
+
+      const parsedJson = parseJsonLoose(text);
+      if (parsedJson === null) {
+        lastCode = "MALFORMED";
+        logFailure(model, "MALFORMED", undefined, text.slice(0, 120));
+        if (attempt < CONTENT_ATTEMPTS_PER_MODEL) await delay(CONTENT_RETRY_DELAY_MS);
+        continue;
+      }
+
+      const validated = schema.safeParse(parsedJson);
+      if (!validated.success) {
+        lastCode = "SCHEMA";
+        logFailure(model, "SCHEMA", undefined, validated.error.issues[0]?.message);
+        if (attempt < CONTENT_ATTEMPTS_PER_MODEL) await delay(CONTENT_RETRY_DELAY_MS);
+        continue;
+      }
+
+      return { ok: true, data: validated.data, model };
     }
-
-    const text = readCandidateText(result.payload);
-    if (!text) {
-      lastCode = "EMPTY";
-      if (attempt === MAX_ATTEMPTS) break;
-      await delay(attempt * 700);
-      continue;
-    }
-
-    const parsedJson = parseJsonLoose(text);
-    if (parsedJson === null) {
-      lastCode = "MALFORMED";
-      if (attempt === MAX_ATTEMPTS) break;
-      await delay(attempt * 700);
-      continue;
-    }
-
-    const validated = schema.safeParse(parsedJson);
-    if (!validated.success) {
-      lastCode = "SCHEMA";
-      if (attempt === MAX_ATTEMPTS) break;
-      await delay(attempt * 700);
-      continue;
-    }
-
-    return { ok: true, data: validated.data, model: env.geminiModel };
   }
 
   return aiFailure(lastCode);

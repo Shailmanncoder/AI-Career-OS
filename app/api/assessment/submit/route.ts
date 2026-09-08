@@ -8,7 +8,7 @@ import { assessmentLevelFromScore, scoreAssessment } from "@/lib/engine/scoring"
 import { recomputeCareerIntelligence } from "@/lib/services/career-service";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const guard = await guardRoute({ route: "assessment-submit", limit: 15, windowMs: 60_000 });

@@ -4,7 +4,7 @@ import { roadmapGenerateSchema } from "@/lib/validation/forms";
 import { generateRoadmapForUser, summarizeRoadmapProgress } from "@/lib/services/roadmap-service";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const guard = await guardRoute({ route: "roadmap-generate", limit: 6, windowMs: 60_000 });

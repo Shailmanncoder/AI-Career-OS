@@ -7,7 +7,7 @@ import { fallbackAssessment } from "@/lib/services/fallbacks";
 import { categoryLabel } from "@/lib/services/resume-service";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const guard = await guardRoute({ route: "assessment-generate", limit: 10, windowMs: 60_000 });

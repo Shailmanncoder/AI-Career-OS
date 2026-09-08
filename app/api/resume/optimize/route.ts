@@ -6,7 +6,7 @@ import { optimizeResume, type ResumeOptimizerContext } from "@/lib/ai/tasks/resu
 import { fallbackResumeOptimization } from "@/lib/services/fallbacks";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const guard = await guardRoute({ route: "resume-optimize", limit: 8, windowMs: 60_000 });

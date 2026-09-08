@@ -7,7 +7,7 @@ import {
 } from "@/lib/services/career-service";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST() {
   const guard = await guardRoute({ route: "career-match", limit: 10, windowMs: 60_000 });

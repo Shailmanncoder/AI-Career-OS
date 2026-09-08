@@ -7,7 +7,7 @@ import { fallbackInterviewEvaluation } from "@/lib/services/fallbacks";
 import { averageOf } from "@/lib/engine/scoring";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 const MAX_QUESTIONS = 8;
 
