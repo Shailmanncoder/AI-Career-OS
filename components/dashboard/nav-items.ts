@@ -1,5 +1,6 @@
 import {
   Braces,
+  BriefcaseBusiness,
   ClipboardCheck,
   FileText,
   LayoutDashboard,
@@ -25,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/careers", label: "Career Matches", icon: Target, group: "Career" },
   { href: "/simulator", label: "Career Simulator", icon: Sparkles, group: "Career" },
   { href: "/roadmap", label: "Roadmap", icon: Route, group: "Career" },
+  { href: "/jobs", label: "Job Search", icon: BriefcaseBusiness, group: "Career" },
   { href: "/optimizer", label: "Resume Optimizer", icon: Wand2, group: "Practice" },
   { href: "/assessments", label: "Assessments", icon: ClipboardCheck, group: "Practice" },
   { href: "/interview", label: "Interview Coach", icon: MessagesSquare, group: "Practice" },

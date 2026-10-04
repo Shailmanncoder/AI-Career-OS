@@ -25,6 +25,9 @@
     },
     "app/api/career/match/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/jobs/route.ts": {
+      "maxDuration": 60
     }
   }
 }

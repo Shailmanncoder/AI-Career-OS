@@ -52,6 +52,13 @@ export function handleRouteError(error: unknown) {
     return apiError("CONFLICT", "Upload and analyze a resume before running this action.");
   }
 
+  if (message === "JOBS_NOT_CONFIGURED") {
+    return apiError("CONFLICT", "Job search is not configured on this server yet.");
+  }
+  if (message === "JOBS_UPSTREAM") {
+    return apiError("UPSTREAM", "The job boards did not respond. Try again in a moment.");
+  }
+
   console.error("[api]", error);
   return apiError("INTERNAL", "Something went wrong. Please try again.");
 }

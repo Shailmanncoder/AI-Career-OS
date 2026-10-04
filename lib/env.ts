@@ -31,6 +31,10 @@ export const env = {
   geminiApiKey: readOptional("GEMINI_API_KEY") ?? readOptional("GOOGLE_API_KEY"),
   geminiModel: readOptional("GEMINI_MODEL") ?? DEFAULT_MODEL,
   geminiModels: buildModelChain(),
+  jsearchApiKey: readOptional("JSEARCH_API_KEY") ?? readOptional("RAPIDAPI_KEY"),
+  adzunaAppId: readOptional("ADZUNA_APP_ID"),
+  adzunaAppKey: readOptional("ADZUNA_APP_KEY"),
+  jobsCountry: (readOptional("JOBS_COUNTRY") ?? "in").toLowerCase(),
   appUrl: readOptional("AUTH_URL") ?? readOptional("NEXTAUTH_URL") ?? "http://localhost:3000",
   isProduction: process.env.NODE_ENV === "production",
 };
